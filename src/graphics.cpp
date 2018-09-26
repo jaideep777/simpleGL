@@ -72,6 +72,8 @@ void Shape::createShaders(){
 	glAttachShader(program_id, vertexShader_id);
 	glAttachShader(program_id, fragmentShader_id);
 	glLinkProgram(program_id);
+	glDeleteShader(fragmentShader_id);
+	glDeleteShader(vertexShader_id);
 	
 	
 	ErrorCheckValue = glGetError();
@@ -89,8 +91,8 @@ void Shape::deleteShaders(){
 	glDetachShader(program_id, vertexShader_id);
 	glDetachShader(program_id, fragmentShader_id);
 
-	glDeleteShader(fragmentShader_id);
-	glDeleteShader(vertexShader_id);
+//	glDeleteShader(fragmentShader_id);
+//	glDeleteShader(vertexShader_id);
 
 	glDeleteProgram(program_id);
 }
@@ -148,11 +150,21 @@ void Shape::render(){
 	setRenderVariable("psize", 4);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[swap]);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(0, 			// index (as specified in vertex shader layout (location = index))
+						  2, 			// size (1D/2D/3D/4D) (1-4)
+						  GL_FLOAT, 	// data type of each component
+						  GL_FALSE, 	// normalize?
+						  0, 			// stride (space between consecutive values) 0 = tightly packed
+						  0);			// 
 	glEnableVertexAttribArray(0);	
 
 	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_id);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+	glVertexAttribPointer(1, 
+						  4, 
+						  GL_FLOAT, 
+						  GL_FALSE, 
+						  0, 
+						  0);
 	glEnableVertexAttribArray(1);	
 
 	glDrawArrays(GL_TRIANGLES, 0, nVertices);
