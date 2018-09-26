@@ -11,6 +11,11 @@
 #include "../utils/simple_timer.h"
 #include "../utils/simple_initializer.h"
 #include "../utils/simple_palettes.h"
+
+#include "../glm/glm.hpp"
+#include "../glm/gtc/matrix_transform.hpp"
+#include "../glm/gtc/type_ptr.hpp"
+
 using namespace std;
 
 /* =======================================================================
@@ -34,6 +39,8 @@ class Shape{
 	string vertexShaderFile;
 	string fragmentShaderFile;
 	
+	glm::mat4 model;
+	
 	public:
 	Shape(){};
 	Shape(string obj_name, bool dbuff, int nVert);
@@ -52,6 +59,7 @@ class Shape{
 	void setRenderVariable(string s, float2 f);
 	void setRenderVariable(string s, float3 f);
 	void setRenderVariable(string s, float4 f);
+	void setShaderVariable(string s, glm::mat4 f);
 
 	void render();
 	
@@ -142,6 +150,9 @@ class Renderer{
 	string command;
 
 	public:	
+	
+	glm::mat4 view, projection;
+	
 	// update intervals/steps
 	int nSkip;				// number of steps to skip before re-rendering
 	int displayInterval;	// interval in ms between 2 display calls
