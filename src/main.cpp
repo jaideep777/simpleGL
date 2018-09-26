@@ -44,6 +44,7 @@ int main(int argc, char **argv){
 //	pt.setDefaultColor();
 	
 	Renderer R;
+	R.init();
 	glRenderer = &R;
 	
 	glRenderer->addShape(&pt);

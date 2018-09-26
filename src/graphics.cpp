@@ -33,6 +33,9 @@ Shape::Shape(string obj_name, bool dbuff, int nVert){
 	swap = 0;
 	type = "";
 	nVertices = nVert;
+	model = glm::mat4(1.0f);
+
+	
 }
 
 
@@ -136,18 +139,24 @@ void Shape::setRenderVariable(string s, float4 f){
 	glUniform4f(loc, f.x, f.y, f.z, f.w);
 }
 
+void Shape::setShaderVariable(string s, glm::mat4 f){
+	GLuint loc = glGetUniformLocation(program_id, s.c_str());
+	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(f));
+}
+
 
 void Shape::render(){
 
 	useProgram();
 	
 	// set the coord system bounds for getting orthograhic projection in vertex-shader
-	setRenderVariable("xlim", make_float2(-1, 1)); 
-	setRenderVariable("ylim", make_float2(-1, 1)); 
-	setRenderVariable("zlim", make_float2(-1, 1)); 
+//	setRenderVariable("xlim", make_float2(-1, 1)); 
+//	setRenderVariable("ylim", make_float2(-1, 1)); 
+//	setRenderVariable("zlim", make_float2(-1, 1)); 
 	
 	// set the point size to match physical scale
 	setRenderVariable("psize", 4);
+	setShaderVariable("model", glRenderer->view*model);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[swap]);
 	glVertexAttribPointer(0, 			// index (as specified in vertex shader layout (location = index))
@@ -370,6 +379,12 @@ void Renderer::init(){
 
 	window_width = 512;
 	window_height = 512;
+	
+	view = glm::translate(glm::mat4(1.0f), glm::vec3(0.25f, 0.f, 0.0f) );
+	projection = glm::perspective(glm::radians(45.0f), float(window_width) / window_height, 0.1f, 100.0f);
+
+	glm::vec4 a = projection*glm::vec4(1,0,0,1);
+	cout << "Vec:" << a.x << " " << a.y << " " << a.z << " " << a.w << endl;
 
 	int t = 50; //I.getScalar("dispInterval");
 	if (t < 0) {
