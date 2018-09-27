@@ -48,12 +48,6 @@ void Shape::createVBO(void* data, int nbytes){
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[0]); 	// Bring 1st buffer into current openGL context
 	glBufferData(GL_ARRAY_BUFFER, nbytes, data, GL_DYNAMIC_DRAW); 
 
-	if (doubleBuffered){
-		// allocate space for 2nd buffer, but dont copy any data	
-		glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[1]); 	// bring 2nd buffer into current openGL context
-		glBufferData(GL_ARRAY_BUFFER, nbytes, NULL, GL_DYNAMIC_DRAW);	
-	}
-	
 	// remove buffers from curent context. (appropriate buffers will be set bu CUDA resources)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);			
 }
@@ -156,7 +150,7 @@ void Shape::render(){
 	
 	// set the point size to match physical scale
 	setRenderVariable("psize", 4);
-	setShaderVariable("model", glRenderer->view*model);
+	setShaderVariable("model", glRenderer->projection*glRenderer->view*model);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[swap]);
 	glVertexAttribPointer(0, 			// index (as specified in vertex shader layout (location = index))
@@ -380,10 +374,19 @@ void Renderer::init(){
 	window_width = 512;
 	window_height = 512;
 	
-	view = glm::translate(glm::mat4(1.0f), glm::vec3(0.25f, 0.f, 0.0f) );
-	projection = glm::perspective(glm::radians(45.0f), float(window_width) / window_height, 0.1f, 100.0f);
+//	view = glm::translate(glm::mat4(1.0f), glm::vec3(0.f, 0.f, -100.0f) );
+	camera_tx = camera_ty = camera_rx = camera_ry = 0;
+	camera_s = 1;
+	
+	view = glm::lookAt(glm::vec3(0.0f, 0.0f, 100.0f), 
+  		   			   glm::vec3(0.0f, 0.0f, 0.0f), 
+  		   			   glm::vec3(0.0f, 1.0f, 0.0f));
+  	view = glm::translate(view, glm::vec3(camera_tx, camera_ty, 0));
+  		   			   
+	projection = glm::perspective(glm::radians(90.0f), float(window_width) / window_height, 0.1f, 100.0f);
+	//projection = glm::ortho(0.0f, 100.0f, 0.0f, 100.0f, 0.f, 100.0f);
 
-	glm::vec4 a = projection*glm::vec4(1,0,0,1);
+	glm::vec4 a = projection*view*glm::vec4(1,0,0,1);
 	cout << "Vec:" << a.x << " " << a.y << " " << a.z << " " << a.w << endl;
 
 	int t = 50; //I.getScalar("dispInterval");
@@ -537,6 +540,8 @@ bool init_hyperGL(int *argc, char **argv){
 	glutDisplayFunc(display); 
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyPress);
+	glutMouseFunc(mousePress);
+	glutMotionFunc(mouseMove);
 //	glutIdleFunc(NULL);	// start animation immediately. Otherwise init with NULL	
 	glutTimerFunc(glRenderer->getDisplayInterval(), timerEvent, 0);
 //	glutCloseFunc(cleanup);
@@ -544,7 +549,7 @@ bool init_hyperGL(int *argc, char **argv){
     // default initialization
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glEnable(GL_PROGRAM_POINT_SIZE);
-//  glDisable(GL_DEPTH_TEST);
+//    glEnable(GL_DEPTH_TEST);
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
@@ -565,6 +570,14 @@ void display(){
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
+	glRenderer->view = glm::lookAt(glm::vec3(0.0f, 0.0f, 100.0f), 
+  		   			   glm::vec3(0.0f, 0.0f, 0.0f), 
+  		   			   glm::vec3(0.0f, 1.0f, 0.0f));
+  	glRenderer->view = glm::translate(glRenderer->view, glm::vec3(glRenderer->camera_tx, glRenderer->camera_ty, 0));
+  	glRenderer->view = glm::scale(glRenderer->view, glm::vec3(glRenderer->camera_s, glRenderer->camera_s, glRenderer->camera_s));
+  	glRenderer->view = glm::rotate(glRenderer->view, glRenderer->camera_rx*0.1f, glm::vec3(1.f, 0.f, 0.f));
+  	glRenderer->view = glm::rotate(glRenderer->view, glRenderer->camera_ry*0.1f, glm::vec3(0.f, 1.f, 0.f));
+
 //	render all shapes in list
 	for (int i=0; i<glRenderer->shapes_vec.size(); ++i){
 		Shape * s = glRenderer->shapes_vec[i];
@@ -572,7 +585,7 @@ void display(){
 		else if (s->type == "pointset") ((PointSet*)s)->render();
 		else  {
 			s->render();
-			cout << "rendering shape: " << s->objName << endl;
+			//cout << "rendering shape: " << s->objName << endl;
 		}
 	}
 
@@ -630,6 +643,70 @@ void keyPress(unsigned char key, int x, int y){
 		glRenderer->receiveConsoleChar(key);
 	}
 		
+	glutPostRedisplay();
+
+}
+
+bool lMousePressed, rMousePressed, mMousePressed;
+float mouse_x0=0, mouse_y0=0;
+
+void mousePress(int button, int state, int x, int y){
+	switch (button) {
+		case GLUT_LEFT_BUTTON:
+			if (state == GLUT_DOWN){
+				lMousePressed = 1;
+				mouse_x0 = x;
+				mouse_y0 = y;
+			}
+			else{
+				lMousePressed = 0;
+			} 
+		break;
+
+		case GLUT_MIDDLE_BUTTON:
+			if (state == GLUT_DOWN){
+				mMousePressed = 1;
+				mouse_x0 = x;
+				mouse_y0 = y;
+			}
+			else{
+				mMousePressed = 0;
+			} 
+		break;
+
+		case GLUT_RIGHT_BUTTON:
+			if (state == GLUT_DOWN){
+				rMousePressed = 1;
+				mouse_x0 = x;
+				mouse_y0 = y;
+			}
+			else{
+				rMousePressed = 0;
+			} 
+			break;
+
+		default:
+		break;
+	}
+}
+
+void mouseMove(int x, int y){
+	float h = glutGet(GLUT_WINDOW_HEIGHT);
+	float w = glutGet(GLUT_WINDOW_WIDTH);
+	if (lMousePressed == 1){
+		glRenderer->camera_rx += 0.2*(y - mouse_y0);
+		glRenderer->camera_ry += 0.2*(x - mouse_x0);
+	}
+	if (rMousePressed == 1){
+		float r = (y - mouse_y0)/h;
+		glRenderer->camera_s *= 1+r;
+	}
+	if (mMousePressed == 1){
+		glRenderer->camera_ty -= 200*(y - mouse_y0)/h;	// -= because y is measured from top
+		glRenderer->camera_tx += 200*(x - mouse_x0)/w;
+	}
+	mouse_y0 = y;
+	mouse_x0 = x;
 	glutPostRedisplay();
 
 }

@@ -10,10 +10,10 @@ using namespace std;
 
 int main(int argc, char **argv){
 
-	float pos[] = { 0.5, 0.5, //0.5,
-				  0, 0.5, //-0.5,
-				  .5,  0, //  -1,
-				  0,   0 //  1,
+	float pos[] = { 50, 50, //0.5,
+				  25, 50, //-0.5,
+				  50,  25, //  -1,
+				  25,   25 //  1,
 				};
 
 	float4 col[] = {make_float4(1,1,1, 1),
@@ -43,9 +43,10 @@ int main(int argc, char **argv){
 	pt.setColors(col, pt.nVertices);
 //	pt.setDefaultColor();
 	
-	Renderer R;
-	R.init();
-	glRenderer = &R;
+	
+//	Renderer R;
+//	R.init();
+//	glRenderer = &R;
 	
 	glRenderer->addShape(&pt);
 	

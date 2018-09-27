@@ -152,6 +152,9 @@ class Renderer{
 	public:	
 	
 	glm::mat4 view, projection;
+	float camera_tx, camera_ty;
+	float camera_tz, camera_s, camera_rx, camera_ry;
+	
 	
 	// update intervals/steps
 	int nSkip;				// number of steps to skip before re-rendering
@@ -232,6 +235,8 @@ bool init_hyperGL(int *argc, char **argv);
 void timerEvent(int value);
 void reshape(int w, int h);
 void keyPress(unsigned char key, int x, int y);
+void mouseMove(int x, int y);
+void mousePress(int button, int state, int x, int y);
 void display();
 void cleanup();
 
