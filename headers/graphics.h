@@ -25,11 +25,10 @@ class Shape{
 	public:
 	string objName;
 	string type;
-	bool doubleBuffered;
-	int swap;
+//	bool doubleBuffered;
 	int nVertices;
 	
-	GLuint vbo_ids[2];
+	GLuint vbo_id;
 	GLuint colorBuffer_id;
 
 	GLuint vertexShader_id;
@@ -43,9 +42,10 @@ class Shape{
 	
 	public:
 	Shape(){};
-	Shape(string obj_name, bool dbuff, int nVert);
+	Shape(string obj_name, int nVert, string _type);
+	~Shape();
 
-	void createVBO(void* data, int nbytes);
+	void setVertices(void* data, int nbytesPerVertex);
 	void createShaders();
 	void createColorBuffer();
 	
@@ -53,7 +53,7 @@ class Shape{
 	void deleteShaders();
 	void deleteColorBuffer();
 	
-	void setColors(float4 *colData, int nColors);
+	void setColors(float4 *colData);
 	
 	void setRenderVariable(string s, float  f);
 	void setRenderVariable(string s, float2 f);
@@ -67,36 +67,25 @@ class Shape{
 };
 
 
-class ColorMap : public Shape{
-	public:
-	int nlevs;
-	int nx;
-	float xmin, xmax;
+//class ColorMap : public Shape{
+//	public:
+//	int nlevs;
+//	int nx;
+//	float xmin, xmax;
 
-	vector <Colour_rgb> palette;
+//	vector <Colour_rgb> palette;
 
-	ColorMap();
-	ColorMap(string obj_name, bool dbuff, int nlevs, int nx, float _xmin, float _xmax);
-	
-	void createGridCentres(float2* cmap_tmp);
-	void updateColors(float* colData, int nCol, float cmin = -1e20, float cmax = -1e20);
-	void render();
+//	ColorMap();
+//	ColorMap(string obj_name, int nlevs, int nx, float _xmin, float _xmax);
+//	
+//	void createGridCentres(float2* cmap_tmp);
+//	void updateColors(float* colData, int nCol, float cmin = -1e20, float cmax = -1e20);
+//	void render();
 
-	void destroy();
-};
+//	void destroy();
+//};
 
 
-class PointSet : public ColorMap{
-	public:
-	Colour_rgb col;
-	float pointSize;
-		
-	PointSet();
-	PointSet(string obj_name, bool dbuff, int nc, float _xmin, float _xmax);
-
-	void setDefaultColor();
-	void render();
-};
 
 /* =======================================================================
 	NOTE ON USING A RENDERER

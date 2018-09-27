@@ -21,42 +21,6 @@ void loadShader(string filename, GLuint &shader_id, GLenum shader_type){
 }
 
 
-// ===========================================================
-// class Shape
-// ===========================================================
-
-Shape::Shape(string obj_name, bool dbuff, int nVert){
-	objName = obj_name;
-	vertexShaderFile = "shaders/shader_vertex_" + obj_name + ".glsl";
-	fragmentShaderFile = "shaders/shader_fragment_" + obj_name + ".glsl";
-	doubleBuffered = dbuff;
-	swap = 0;
-	type = "";
-	nVertices = nVert;
-	model = glm::mat4(1.0f);
-
-	
-}
-
-
-void Shape::createVBO(void* data, int nbytes){
-	cout << "creating buffers for " << objName << endl;
-	// create buffers 
-	glGenBuffers(2, vbo_ids);					// create buffer ids and store in array
-
-	// alllocate space and copy initial data to 1st buffer
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[0]); 	// Bring 1st buffer into current openGL context
-	glBufferData(GL_ARRAY_BUFFER, nbytes, data, GL_DYNAMIC_DRAW); 
-
-	// remove buffers from curent context. (appropriate buffers will be set bu CUDA resources)
-	glBindBuffer(GL_ARRAY_BUFFER, 0);			
-}
-
-void Shape::deleteVBO(){
-	glDeleteBuffers(2, vbo_ids);
-}
-
-
 void Shape::createShaders(){
 	GLenum ErrorCheckValue = glGetError();
 
@@ -94,21 +58,6 @@ void Shape::deleteShaders(){
 	glDeleteProgram(program_id);
 }
 
-void Shape::createColorBuffer(){
-	glGenBuffers(1, &colorBuffer_id);
-}
-
-void Shape::deleteColorBuffer(){
-	glDeleteBuffers(1, &colorBuffer_id);
-}
-
-
-void Shape::setColors(float4 *colData, int nColors){
-	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_id);
-	glBufferData(GL_ARRAY_BUFFER, nColors*sizeof(float4), colData, GL_DYNAMIC_DRAW); 
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-}
-
 void Shape::useProgram(){
 	glUseProgram(program_id);
 }
@@ -138,23 +87,68 @@ void Shape::setShaderVariable(string s, glm::mat4 f){
 	glUniformMatrix4fv(loc, 1, GL_FALSE, glm::value_ptr(f));
 }
 
+// ===========================================================
+// class Shape
+// ===========================================================
+
+Shape::Shape(string obj_name, int nVert, string _type){
+	objName = obj_name;
+	vertexShaderFile = "shaders/shader_vertex_" + obj_name + ".glsl";
+	fragmentShaderFile = "shaders/shader_fragment_" + obj_name + ".glsl";
+	//doubleBuffered = dbuff;
+	//swap = 0;
+	type = _type;
+	nVertices = nVert;
+	model = glm::mat4(1.0f);
+
+	cout << "create " << objName << endl;
+	// create vertex buffer
+	glGenBuffers(1, &vbo_id);					// create buffer ids and store in array
+
+	// create color buffer
+	glGenBuffers(1, &colorBuffer_id);
+
+	createShaders();
+}
+
+Shape::~Shape(){
+	
+	deleteShaders();
+	
+	cout << "destroy " << objName << endl;
+	glDeleteBuffers(1, &vbo_id);
+	glDeleteBuffers(1, &colorBuffer_id);
+}
+
+void Shape::setVertices(void* data, int nbytesPerVertex){
+
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_id); 	// Bring 1st buffer into current openGL context
+	glBufferData(GL_ARRAY_BUFFER, nbytesPerVertex*nVertices, data, GL_DYNAMIC_DRAW); 
+	// remove buffers from curent context. (appropriate buffers will be set bu CUDA resources)
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	
+}
+
+
+void Shape::setColors(float4 *colData){
+	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_id);
+	glBufferData(GL_ARRAY_BUFFER, nVertices*4*sizeof(float), colData, GL_DYNAMIC_DRAW); 
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+}
+
+
 
 void Shape::render(){
 
 	useProgram();
 	
-	// set the coord system bounds for getting orthograhic projection in vertex-shader
-//	setRenderVariable("xlim", make_float2(-1, 1)); 
-//	setRenderVariable("ylim", make_float2(-1, 1)); 
-//	setRenderVariable("zlim", make_float2(-1, 1)); 
-	
 	// set the point size to match physical scale
 	setRenderVariable("psize", 4);
 	setShaderVariable("model", glRenderer->projection*glRenderer->view*model);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[swap]);
+	glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
 	glVertexAttribPointer(0, 			// index (as specified in vertex shader layout (location = index))
-						  2, 			// size (1D/2D/3D/4D) (1-4)
+						  3, 			// size (1D/2D/3D/4D) (1-4)
 						  GL_FLOAT, 	// data type of each component
 						  GL_FALSE, 	// normalize?
 						  0, 			// stride (space between consecutive values) 0 = tightly packed
@@ -170,7 +164,11 @@ void Shape::render(){
 						  0);
 	glEnableVertexAttribArray(1);	
 
-	glDrawArrays(GL_TRIANGLES, 0, nVertices);
+	if (type == "triangles") 	glDrawArrays(GL_TRIANGLES, 0, nVertices);
+	else if (type == "lines")  	glDrawArrays(GL_LINES, 0, nVertices);
+	else if (type == "points") 	glDrawArrays(GL_POINTS, 0, nVertices);
+//	else if (type == "quads") 	glDrawArrays(GL_QUADS, 0, nVertices);
+	else 	  					glDrawArrays(GL_POINTS, 0, nVertices);
 	
 }
 
@@ -180,181 +178,106 @@ void Shape::render(){
 // class Colormap
 // ===========================================================
 
-ColorMap::ColorMap(){
-//	objName = "cmap";
-//	doubleBuffered = false;
-//	swap = 0;
-//	nlevs = 100;
-//	nx = 10;
-//	nVertices = 100;
-//	xmin = 0;
-//	xmax = 100;
-//	vertexShaderFile = "shaders/shader_vertex_" + objName + ".glsl";
-//	fragmentShaderFile = "shaders/shader_fragment_" + objName + ".glsl";
+//ColorMap::ColorMap(){
+////	objName = "cmap";
+////	doubleBuffered = false;
+////	swap = 0;
+////	nlevs = 100;
+////	nx = 10;
+////	nVertices = 100;
+////	xmin = 0;
+////	xmax = 100;
+////	vertexShaderFile = "shaders/shader_vertex_" + objName + ".glsl";
+////	fragmentShaderFile = "shaders/shader_fragment_" + objName + ".glsl";
+////	type = "colormap";
+
+////	palette = createPalette_grayscale(nlevs, 0.1, 0.9);
+//}
+
+//ColorMap::ColorMap(string obj_name, int _nlevs, int _nx, float _xmin, float _xmax){
+//	objName = obj_name;
+////	doubleBuffered = dbuff;
+////	swap = 0;
+//	nlevs = _nlevs;
+//	nx = _nx;
+//	nVertices = nx*nx;
+//	xmin = _xmin;
+//	xmax = _xmax;
+//	vertexShaderFile = "shaders/shader_vertex_" + obj_name + ".glsl";
+//	fragmentShaderFile = "shaders/shader_fragment_" + obj_name + ".glsl";
 //	type = "colormap";
 
 //	palette = createPalette_grayscale(nlevs, 0.1, 0.9);
-}
-
-ColorMap::ColorMap(string obj_name, bool dbuff, int _nlevs, int _nx, float _xmin, float _xmax){
-	objName = obj_name;
-	doubleBuffered = dbuff;
-	swap = 0;
-	nlevs = _nlevs;
-	nx = _nx;
-	nVertices = nx*nx;
-	xmin = _xmin;
-	xmax = _xmax;
-	vertexShaderFile = "shaders/shader_vertex_" + obj_name + ".glsl";
-	fragmentShaderFile = "shaders/shader_fragment_" + obj_name + ".glsl";
-	type = "colormap";
-
-	palette = createPalette_grayscale(nlevs, 0.1, 0.9);
-};
+//};
 
 
-void ColorMap::createGridCentres(float2 *cmap_tmp){
-	float dxC = (xmax-xmin)/nx;
-	for (int iy=0; iy<nx; ++iy){
-		for (int ix=0; ix<nx; ++ix){
-			cmap_tmp[iy*nx+ix].x = xmin+dxC*(2*ix+1)/2.0;
-			cmap_tmp[iy*nx+ix].y = xmin+dxC*(2*iy+1)/2.0;
-		}
-	} 
+//void ColorMap::createGridCentres(float2 *cmap_tmp){
+//	float dxC = (xmax-xmin)/nx;
+//	for (int iy=0; iy<nx; ++iy){
+//		for (int ix=0; ix<nx; ++ix){
+//			cmap_tmp[iy*nx+ix].x = xmin+dxC*(2*ix+1)/2.0;
+//			cmap_tmp[iy*nx+ix].y = xmin+dxC*(2*iy+1)/2.0;
+//		}
+//	} 
 
-}
-
-
-void ColorMap::updateColors(float* colData, int nCol, float cmin, float cmax){
-	float colMin=colData[0], colMax=colData[0];
-	for (int i=1; i<nCol; ++i){
-		colMin = min(colMin, colData[i]); 
-		colMax = max(colMax, colData[i]); 
-	}
-//	cout << cmin << " " << cmax << endl;
-	if (!(cmin - -1e20 < 1e-4)) colMin = cmin;
-	if (!(cmax - -1e20 < 1e-4)) colMax = cmax;
-//	colMax = max(fabs(colMax), fabs(colMin));
-//	cout << "nCol = " << nCol << ", colMax = " << colMax << ", colMin = " << colMin << '\n';
-	float4 * col_tmp = new float4[nCol];
-	for (int i=0; i<nCol; ++i) {
-		Colour_rgb c;
-		int colID = discretize_index(colData[i], nlevs, colMin, colMax);
-		c = palette[colID];
-		col_tmp[i] = make_float4(c.r, c.g, c.b, 1);
-//		cout << colData[i] << " ";
-//		cout << colID << " | ";
-	}
-//	cout << "\n";
-
-	setColors(col_tmp, nCol);
-
-	delete [] col_tmp;
-}
+//}
 
 
-void ColorMap::render(){
+//void ColorMap::updateColors(float* colData, int nCol, float cmin, float cmax){
+//	float colMin=colData[0], colMax=colData[0];
+//	for (int i=1; i<nCol; ++i){
+//		colMin = min(colMin, colData[i]); 
+//		colMax = max(colMax, colData[i]); 
+//	}
+////	cout << cmin << " " << cmax << endl;
+//	if (!(cmin - -1e20 < 1e-4)) colMin = cmin;
+//	if (!(cmax - -1e20 < 1e-4)) colMax = cmax;
+////	colMax = max(fabs(colMax), fabs(colMin));
+////	cout << "nCol = " << nCol << ", colMax = " << colMax << ", colMin = " << colMin << '\n';
+//	float4 * col_tmp = new float4[nCol];
+//	for (int i=0; i<nCol; ++i) {
+//		Colour_rgb c;
+//		int colID = discretize_index(colData[i], nlevs, colMin, colMax);
+//		c = palette[colID];
+//		col_tmp[i] = make_float4(c.r, c.g, c.b, 1);
+////		cout << colData[i] << " ";
+////		cout << colID << " | ";
+//	}
+////	cout << "\n";
 
-	useProgram();
-	
-	// set the coord system bounds for getting orthograhic projection in vertex-shader
-	setRenderVariable("bounds", make_float4(xmin, xmax, xmin, xmax));
-	
-	// set the point size to match physical scale
-	float window_size_x = min(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
-	float psize = window_size_x/nx;
-	//if (psize < 1) psize = 1;
-	setRenderVariable("psize", psize);
+//	setColors(col_tmp, nCol);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[swap]);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);	
-
-	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_id);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(1);	
-
-	glDrawArrays(GL_POINTS, 0, nVertices);
-
-//	swap = 1-swap;
-}
-
-
-
-// ===========================================================
-// class Renderer
-// ===========================================================
+//	delete [] col_tmp;
+//}
 
 
-PointSet::PointSet(){
-//	objName = "psys";
-//	doubleBuffered = false;
-//	swap = 0;
-//	nlevs = 100;
-//	nx = 10;
-//	nVertices = 100;
-//	xmin = 0;
-//	xmax = 100;
-//	vertexShaderFile = "shaders/shader_vertex_" + objName + ".glsl";
-//	fragmentShaderFile = "shaders/shader_fragment_" + objName + ".glsl";
-//	pointSize = 1;
-//	col = Colour_rgb(1,0,0);
-//	type = "pointset";
+//void ColorMap::render(){
 
-//	palette = createPalette_rainbow(nlevs, 0.1, 0.9);
-}
+//	useProgram();
+//	
+//	// set the coord system bounds for getting orthograhic projection in vertex-shader
+//	setRenderVariable("bounds", make_float4(xmin, xmax, xmin, xmax));
+//	
+//	// set the point size to match physical scale
+//	float window_size_x = min(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
+//	float psize = window_size_x/nx;
+//	//if (psize < 1) psize = 1;
+//	setRenderVariable("psize", psize);
 
-PointSet::PointSet(string obj_name, bool dbuff, int _nc, float _xmin, float _xmax){
-	objName = obj_name;
-	doubleBuffered = dbuff;
-	swap = 0;
-	nlevs = _nc;
-	nx = _nc;
-	nVertices = nx;
-	xmin = _xmin;
-	xmax = _xmax;
-	vertexShaderFile = "shaders/shader_vertex_" + obj_name + ".glsl";
-	fragmentShaderFile = "shaders/shader_fragment_" + obj_name + ".glsl";
-	pointSize = 4;
-	col = Colour_rgb(1,0,0);
-	type = "pointset";
+//	glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
+//	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
+//	glEnableVertexAttribArray(0);	
 
-	palette = createPalette_rainbow(nlevs, 0.1, 0.9);
-};
+//	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_id);
+//	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
+//	glEnableVertexAttribArray(1);	
+
+//	glDrawArrays(GL_POINTS, 0, nVertices);
+
+////	swap = 1-swap;
+//}
 
 
-void PointSet::setDefaultColor(){
-	float4 col_tmp[nVertices];
-	for (int i=0; i<nVertices; ++i) col_tmp[i] = make_float4(col.r, col.g, col.b, 1);
-	
-	setColors(col_tmp, nx);
-}
-
-
-void PointSet::render(){
-
-	useProgram();
-	
-	// set the coord system bounds for getting orthograhic projection in vertex-shader
-	setRenderVariable("xlim", make_float2(xmin, xmax)); 
-	setRenderVariable("ylim", make_float2(xmin, xmax)); 
-	setRenderVariable("zlim", make_float2(-1, 1)); 
-	
-	// set the point size to match physical scale
-	setRenderVariable("psize", pointSize);
-
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_ids[swap]);
-	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(0);	
-
-	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_id);
-	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
-	glEnableVertexAttribArray(1);	
-
-	glDrawArrays(GL_POINTS, 0, nVertices);
-
-//	swap = 1-swap;
-}
 
 
 // ===========================================================
@@ -581,12 +504,7 @@ void display(){
 //	render all shapes in list
 	for (int i=0; i<glRenderer->shapes_vec.size(); ++i){
 		Shape * s = glRenderer->shapes_vec[i];
-		if      (s->type == "colormap") ((ColorMap*)s)->render();
-		else if (s->type == "pointset") ((PointSet*)s)->render();
-		else  {
-			s->render();
-			//cout << "rendering shape: " << s->objName << endl;
-		}
+		s->render();
 	}
 
 	glRenderer->frameCounter.increment();	// calculate display rate
