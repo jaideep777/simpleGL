@@ -88,6 +88,134 @@ void Shape::setShaderVariable(string s, glm::mat4 f){
 }
 
 // ===========================================================
+// class Palette 
+// ===========================================================
+
+glm::vec4 HSVtoRGB(float h, float s, float v ){
+	glm::vec4 C;
+	
+	if( s == 0 ) {
+		// achromatic (grey)
+		C.r = C.g = C.b = v;
+		return C;
+	}
+
+	h = h*360.f/60.f;			// sector 0 to 5
+	int i = int(h);
+	float f = h - i;			// factorial part of h
+	float p = v * ( 1 - s );
+	float q = v * ( 1 - s * f );
+	float t = v * ( 1 - s * ( 1 - f ) );
+
+	switch( i ) {
+		case 0:
+			C.r = v;
+			C.g = t;
+			C.b = p;
+			break;
+		case 1:
+			C.r = q;
+			C.g = v;
+			C.b = p;
+			break;
+		case 2:
+			C.r = p;
+			C.g = v;
+			C.b = t;
+			break;
+		case 3:
+			C.r = p;
+			C.g = q;
+			C.b = v;
+			break;
+		case 4:
+			C.r = t;
+			C.g = p;
+			C.b = v;
+			break;
+		default:		// case 5:
+			C.r = v;
+			C.g = p;
+			C.b = q;
+			break;
+	}
+
+	return C;
+}
+
+Palette::Palette(int _n){
+	n = _n;
+	colors.resize(n);
+}
+
+void Palette::create_rainbow(float start, float end){
+	for (int i=0; i<n; ++i){
+		float h = start + i*(end-start)/n; float s=1, v=1;
+		colors[i] = HSVtoRGB(h,s,v);
+	}
+}
+
+void Palette::create_random(float start, float end){
+	for (int i=0; i<n; ++i){
+		colors[i].r = start + (end-start)*rand()/RAND_MAX;
+		colors[i].g = start + (end-start)*rand()/RAND_MAX;
+		colors[i].b = start + (end-start)*rand()/RAND_MAX;
+	}
+}
+
+
+void Palette::create_grayscale(float start, float end){
+	for (int i=0; i<n; ++i){
+		colors[i].r = start + (end-start)*float(i)/(n-1);
+		colors[i].g = start + (end-start)*float(i)/(n-1);
+		colors[i].b = start + (end-start)*float(i)/(n-1);
+	}
+}
+
+
+void Palette::create_ramp(glm::vec4 start, glm::vec4 end){
+	for (int i=0; i<n; ++i){
+		colors[i].r = start.r + (end.r-start.r)*float(i)/(n-1);
+		colors[i].g = start.g + (end.g-start.g)*float(i)/(n-1);
+		colors[i].b = start.b + (end.b-start.b)*float(i)/(n-1);
+	}
+}
+
+
+void Palette::print(){
+	cout << "palette:\n";
+	for (int i=0; i<n; ++i){
+		glm::vec4 c = colors[i];
+		cout << int(c.r*255) << "\t" << int(c.g*255) << "\t" << int(c.b*255) << "\n";
+	}
+	cout << '\n';
+}
+
+vector <glm::vec4> Palette::map_values(float* v, int nval, float vmin, float vmax){
+	vector <glm::vec4> cols(nval);
+	
+	float min_val = (vmin == 1e20f)? *min_element(v,v+nval):vmin;
+	float max_val = (vmax == 1e20f)? *max_element(v,v+nval):vmax;
+
+//	cout << "minmax:" <<  min_val << " " << max_val << endl;
+//	colMax = max(fabs(colMax), fabs(colMin));
+//	cout << "nCol = " << nCol << ", colMax = " << colMax << ", colMin = " << colMin << '\n';
+	for (int i=0; i < nval; ++i) {
+		glm::vec4 c;
+		int colID = (v[i] - min_val)/(max_val-min_val)*(n-1);
+//		cout << "colid = " << colID << endl;
+		if (colID < 0 || colID > n-1){
+			cols[i] = glm::vec4(0.f,0.f,0.f,1.f);
+		}
+		else{
+			cols[i] = colors[colID];
+		}
+	}
+	return cols;
+}
+
+
+// ===========================================================
 // class Shape
 // ===========================================================
 
@@ -223,32 +351,6 @@ void Shape::render(){
 //}
 
 
-//void ColorMap::updateColors(float* colData, int nCol, float cmin, float cmax){
-//	float colMin=colData[0], colMax=colData[0];
-//	for (int i=1; i<nCol; ++i){
-//		colMin = min(colMin, colData[i]); 
-//		colMax = max(colMax, colData[i]); 
-//	}
-////	cout << cmin << " " << cmax << endl;
-//	if (!(cmin - -1e20 < 1e-4)) colMin = cmin;
-//	if (!(cmax - -1e20 < 1e-4)) colMax = cmax;
-////	colMax = max(fabs(colMax), fabs(colMin));
-////	cout << "nCol = " << nCol << ", colMax = " << colMax << ", colMin = " << colMin << '\n';
-//	float4 * col_tmp = new float4[nCol];
-//	for (int i=0; i<nCol; ++i) {
-//		Colour_rgb c;
-//		int colID = discretize_index(colData[i], nlevs, colMin, colMax);
-//		c = palette[colID];
-//		col_tmp[i] = make_float4(c.r, c.g, c.b, 1);
-////		cout << colData[i] << " ";
-////		cout << colID << " | ";
-//	}
-////	cout << "\n";
-
-//	setColors(col_tmp, nCol);
-
-//	delete [] col_tmp;
-//}
 
 
 //void ColorMap::render(){
@@ -306,7 +408,7 @@ void Renderer::init(){
   		   			   glm::vec3(0.0f, 1.0f, 0.0f));
   	view = glm::translate(view, glm::vec3(camera_tx, camera_ty, 0));
   		   			   
-	projection = glm::perspective(glm::radians(90.0f), float(window_width) / window_height, 0.1f, 100.0f);
+	projection = glm::perspective(glm::radians(90.0f), float(window_width) / window_height, 0.1f, 1000.0f);
 	//projection = glm::ortho(0.0f, 100.0f, 0.0f, 100.0f, 0.f, 100.0f);
 
 	glm::vec4 a = projection*view*glm::vec4(1,0,0,1);
@@ -328,8 +430,8 @@ void Renderer::init(){
 
 	// create colour palettes
 	int n = 100;
-	palette = createPalette_rainbow(n, 0, 0.75);
-	palette_rand = createPalette_random(n);
+	//palette = createPalette_rainbow(n, 0, 0.75);
+	//palette_rand = createPalette_random(n);
 
 }
 
@@ -472,7 +574,7 @@ bool init_hyperGL(int *argc, char **argv){
     // default initialization
     glClearColor(0.0, 0.0, 0.0, 0.0);
     glEnable(GL_PROGRAM_POINT_SIZE);
-//    glEnable(GL_DEPTH_TEST);
+    glEnable(GL_DEPTH_TEST);
 	glEnable( GL_BLEND );
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 

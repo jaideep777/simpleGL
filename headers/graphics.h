@@ -18,6 +18,21 @@
 
 using namespace std;
 
+
+class Palette{
+	public:
+	int n;
+	vector <glm::vec4> colors;
+
+	Palette(int n);
+	void create_rainbow(float start=0, float end=0.75);
+	void create_random(float start=0, float end=1);
+	void create_grayscale(float start=0, float end=1);
+	void create_ramp(glm::vec4 start, glm::vec4 end);	
+	void print();
+	vector <glm::vec4> map_values(float * v, int nval, float vmin = 1e20, float vmax = 1e20);
+};
+
 /* =======================================================================
 	Shape classes
 ======================================================================= */ 
@@ -156,10 +171,10 @@ class Renderer{
 	// layers - by default only layer 0 is visible
 	vector <bool> layerVis;
 	
-	// colour palettes
-	vector <Colour_rgb> palette;
-	vector <Colour_rgb> palette_rand;
-	vector <Colour_rgb> palette_grad;
+//	// colour palettes
+//	vector <Colour_rgb> palette;
+//	vector <Colour_rgb> palette_rand;
+//	vector <Colour_rgb> palette_grad;
 
 	unsigned int window_width;
 	unsigned int window_height;
