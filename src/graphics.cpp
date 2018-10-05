@@ -205,10 +205,10 @@ vector <glm::vec4> Palette::map_values(float* v, int nval, float vmin, float vma
 		int colID = (v[i] - min_val)/(max_val-min_val)*(n-1);
 //		cout << "colid = " << colID << endl;
 		if (colID < 0 || colID > n-1){
-			cols[i] = glm::vec4(0.f,0.f,0.f,1.f);
+			cols[i] = glm::vec4(0.f,0.f,0.f,1.f);	// if color is out of range, return black
 		}
 		else{
-			cols[i] = colors[colID];
+			cols[i] = colors[colID];	// else return color from palette
 		}
 	}
 	return cols;
@@ -237,6 +237,8 @@ Shape::Shape(string obj_name, int nVert, string _type){
 	glGenBuffers(1, &colorBuffer_id);
 
 	createShaders();
+	
+	glRenderer->addShape(this);
 }
 
 Shape::~Shape(){
@@ -584,7 +586,8 @@ bool init_hyperGL(int *argc, char **argv){
     return true;
 }
 
-void cleanup(){
+void cleanup_hyperGL(){
+	delete glRenderer;
 }
 
 

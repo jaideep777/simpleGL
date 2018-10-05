@@ -59,7 +59,6 @@ int main(int argc, char **argv){
 	Shape pt2("3dpt", 4, "triangles");
 	pt2.setVertices(pos2, 3*sizeof(float));
 	pt2.setColors(col2);
-	glRenderer->addShape(&pt2);
 	
 	float pos3[] = {-100,0,0, 100,0,0, 0,-100,0, 0,100,0, 0,0,-100, 0,0,100};
 	float4 col3[] = {make_float4(1,0,0, 0.5),
@@ -73,7 +72,6 @@ int main(int argc, char **argv){
 	Shape axis("3dpt", 6, "lines");
 	axis.setVertices(pos3, 3*sizeof(float));
 	axis.setColors(col3);
-	glRenderer->addShape(&axis);
 
 	Palette p(20);
 	p.create_grayscale();
@@ -83,12 +81,6 @@ int main(int argc, char **argv){
 	vector <glm::vec4> c = p.map_values(v, 8);
 	for (int i=0; i<8; ++i) cout << c[i].r << " " << c[i].g << " " << c[i].b << " " << c[i].a << "\n";
 	cout << endl; 
-	
-//	Renderer R;
-//	R.init();
-//	glRenderer = &R;
-	
-	glRenderer->addShape(&pt);
 	
 	while(1){       // infinite loop needed to poll anim_on signal.
 		glutMainLoopEvent();
