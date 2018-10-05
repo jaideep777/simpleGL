@@ -36,18 +36,20 @@ int main(int argc, char **argv){
 //	res_shape.updateColors(&res[0], nx*ny);
 
 
-	Shape pt("3dpt", 4, "triangles"); //, 4, -1, 1);
+	Shape pt(4, 3, "points"); //, 4, -1, 1);
 //	pt.createShaders();
-	pt.setVertices(pos, 3*sizeof(float));	
+	pt.pointSize = 4;
+	pt.setVertices(pos);	
 //	pt.createColorBuffer();
 	pt.setColors(col);
+	pt.autoExtent(pos);
 //	pt.setDefaultColor();
 	
 
-	float pos2[] = { -25, -25, 0,//0.5,
-				  -25, 25, 0,//-0.5,
-				  25,  -25, 0,//  -1,
-				  25,   25, 0 //  1,
+	float pos2[] = { -.25, -.25, //0,//0.5,
+				  -.25, .25, //0,//-0.5,
+				  .25,  -.25, //0,//  -1,
+				  .25,   .25 //0 //  1,
 					};
 
 	float4 col2[] = {make_float4(1,1,0, 0.5),
@@ -56,9 +58,10 @@ int main(int argc, char **argv){
 				    make_float4(1,1,1, 0.5)
 				   };
 					
-	Shape pt2("3dpt", 4, "triangles");
-	pt2.setVertices(pos2, 3*sizeof(float));
+	Shape2D pt2(4, "triangles");
+	pt2.setVertices(pos2);
 	pt2.setColors(col2);
+	pt2.setExtent(-.5, .5, -.5, .5);
 	
 	float pos3[] = {-100,0,0, 100,0,0, 0,-100,0, 0,100,0, 0,0,-100, 0,0,100};
 	float4 col3[] = {make_float4(1,0,0, 0.5),
@@ -69,8 +72,8 @@ int main(int argc, char **argv){
 				    make_float4(0.0,0.8,1, 0.5)
 				   };
 	
-	Shape axis("3dpt", 6, "lines");
-	axis.setVertices(pos3, 3*sizeof(float));
+	Shape axis(6, 3, "lines");
+	axis.setVertices(pos3);
 	axis.setColors(col3);
 
 	Palette p(20);

@@ -219,15 +219,20 @@ vector <glm::vec4> Palette::map_values(float* v, int nval, float vmin, float vma
 // class Shape
 // ===========================================================
 
-Shape::Shape(string obj_name, int nVert, string _type){
-	objName = obj_name;
-	vertexShaderFile = "shaders/shader_vertex_" + obj_name + ".glsl";
-	fragmentShaderFile = "shaders/shader_fragment_" + obj_name + ".glsl";
+Shape::Shape(int nVert, int components_per_vertex, string _type){
+	
+	dim = components_per_vertex;
+	
+	string shader_name = as_string(dim) + "dpt";
+	
+	vertexShaderFile = "shaders/shader_vertex_" + shader_name + ".glsl";
+	fragmentShaderFile = "shaders/shader_fragment_" + shader_name + ".glsl";
 	//doubleBuffered = dbuff;
 	//swap = 0;
 	type = _type;
 	nVertices = nVert;
 	model = glm::mat4(1.0f);
+	pointSize = 1;
 
 	cout << "create " << objName << endl;
 	// create vertex buffer
@@ -250,10 +255,10 @@ Shape::~Shape(){
 	glDeleteBuffers(1, &colorBuffer_id);
 }
 
-void Shape::setVertices(void* data, int nbytesPerVertex){
+void Shape::setVertices(void* data){
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_id); 	// Bring 1st buffer into current openGL context
-	glBufferData(GL_ARRAY_BUFFER, nbytesPerVertex*nVertices, data, GL_DYNAMIC_DRAW); 
+	glBufferData(GL_ARRAY_BUFFER, dim*sizeof(float)*nVertices, data, GL_DYNAMIC_DRAW); 
 	// remove buffers from curent context. (appropriate buffers will be set bu CUDA resources)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	
@@ -262,7 +267,7 @@ void Shape::setVertices(void* data, int nbytesPerVertex){
 
 void Shape::setColors(float4 *colData){
 	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_id);
-	glBufferData(GL_ARRAY_BUFFER, nVertices*4*sizeof(float), colData, GL_DYNAMIC_DRAW); 
+	glBufferData(GL_ARRAY_BUFFER, 4*sizeof(float)*nVertices, colData, GL_DYNAMIC_DRAW); 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -273,12 +278,13 @@ void Shape::render(){
 	useProgram();
 	
 	// set the point size to match physical scale
-	setRenderVariable("psize", 4);
-	setShaderVariable("model", glRenderer->projection*glRenderer->view*model);
+	setRenderVariable("psize", pointSize);
+	if (dim == 3) setShaderVariable("model", glRenderer->projection*glRenderer->view*model);
+	if (dim == 2) setShaderVariable("model", model);
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
 	glVertexAttribPointer(0, 			// index (as specified in vertex shader layout (location = index))
-						  3, 			// size (1D/2D/3D/4D) (1-4)
+						  dim, 			// size (1D/2D/3D/4D) (1-4)
 						  GL_FLOAT, 	// data type of each component
 						  GL_FALSE, 	// normalize?
 						  0, 			// stride (space between consecutive values) 0 = tightly packed
@@ -297,11 +303,42 @@ void Shape::render(){
 	if (type == "triangles") 	glDrawArrays(GL_TRIANGLES, 0, nVertices);
 	else if (type == "lines")  	glDrawArrays(GL_LINES, 0, nVertices);
 	else if (type == "points") 	glDrawArrays(GL_POINTS, 0, nVertices);
-//	else if (type == "quads") 	glDrawArrays(GL_QUADS, 0, nVertices);
 	else 	  					glDrawArrays(GL_POINTS, 0, nVertices);
 	
 }
 
+void Shape::autoExtent(float* data){
+	glm::vec3 centroid(0.f, 0.f, 0.f);
+	glm::vec3 max(-1e20f, -1e20f, -1e20f);
+	glm::vec3 min(1e20f, 1e20f, 1e20f);
+	for (int i=0; i<nVertices*dim; i=i+dim){
+		centroid += glm::vec3(data[i], data[i+1], data[i+2]);
+		min.x = fmin(min.x, data[i]);
+		min.y = fmin(min.y, data[i+1]);
+		min.z = fmin(min.z, data[i+2]);
+		max.x = fmax(max.x, data[i]);
+		max.y = fmax(max.y, data[i+1]);
+		max.z = fmax(max.z, data[i+2]);
+	}
+	centroid /= nVertices;
+	float dz = max.z - min.z;
+	float dy = max.y - min.y;
+	float dx = max.x - min.x;
+	float scale = 2/fmax(fmax(dx, dy), dz)*40;
+
+	cout << "centroid: " << centroid.x << " " << centroid.y << " " << centroid.z << endl;
+	cout << "scale: " << scale;
+
+	model = glm::mat4(1.f);
+	model = glm::scale(model, glm::vec3(scale, scale, scale));
+	model = glm::translate(model, -centroid);
+}
+
+Shape2D::Shape2D(int nVert, string _type) : Shape(nVert, 2, _type) {}
+
+void Shape2D::setExtent(float xmin, float xmax, float ymin, float ymax){
+	model = glm::ortho(xmin, xmax, ymin, ymax, 0.f, 100.f);
+}
 
 
 // ===========================================================

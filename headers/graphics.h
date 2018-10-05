@@ -34,14 +34,15 @@ class Palette{
 };
 
 /* =======================================================================
-	Shape classes
+	Shape class
 ======================================================================= */ 
 class Shape{
 	public:
 	string objName;
 	string type;
 //	bool doubleBuffered;
-	int nVertices;
+	int nVertices;	//!< Number of vertices that comprise the shape
+	int dim; 		//!< Number of components per vertex (2 for 2D, 3 for 3D)
 	
 	GLuint vbo_id;
 	GLuint colorBuffer_id;
@@ -55,14 +56,18 @@ class Shape{
 	
 	glm::mat4 model;
 	
+	float pointSize;
+	
 	public:
 	Shape(){};
-	Shape(string obj_name, int nVert, string _type);
+	Shape(int nVert, int components_per_vertex, string _type);
 	~Shape();
 
-	void setVertices(void* data, int nbytesPerVertex);
+	void setVertices(void* data);
 	void createShaders();
 	void createColorBuffer();
+	
+	void autoExtent(float* data);
 	
 	void deleteVBO();
 	void deleteShaders();
@@ -81,6 +86,12 @@ class Shape{
 	void useProgram();
 };
 
+
+class Shape2D : public Shape{
+	public:
+	Shape2D(int nVert, string _type);
+	void setExtent(float xmin, float xmax, float ymin, float ymax);
+};
 
 //class ColorMap : public Shape{
 //	public:
