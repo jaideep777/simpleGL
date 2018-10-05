@@ -26,7 +26,8 @@
 *.rar
 *.tar
 *.zip
-
+*.ply
+*.las
 
 
 # OS generated files #
