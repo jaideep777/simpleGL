@@ -3,7 +3,7 @@
 
 #include <GL/glew.h>
 #include <GL/freeglut.h>
-#include <cuda_runtime.h>
+//#include <cuda_runtime.h>
 //#include <cuda_gl_interop.h>
 #include <vector>
 #include <string>
@@ -73,12 +73,12 @@ class Shape{
 	void deleteShaders();
 	void deleteColorBuffer();
 	
-	void setColors(float4 *colData);
+	void setColors(float* colData);
 	
 	void setRenderVariable(string s, float  f);
-	void setRenderVariable(string s, float2 f);
-	void setRenderVariable(string s, float3 f);
-	void setRenderVariable(string s, float4 f);
+	void setRenderVariable(string s, glm::vec2 f);
+	void setRenderVariable(string s, glm::vec3 f);
+	void setRenderVariable(string s, glm::vec4 f);
 	void setShaderVariable(string s, glm::mat4 f);
 
 	void render();

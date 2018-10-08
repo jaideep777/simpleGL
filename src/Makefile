@@ -11,7 +11,7 @@ CUFILES  :=  $(wildcard *.cu)
 # ------------------------------------------------------------------------------
 
 # paths
-CUDA_INSTALL_PATH ?= /usr/local/cuda#-5.0
+#CUDA_INSTALL_PATH ?= /usr/local/cuda#-5.0
 
 # compilers
 NVCC := nvcc -O3 #--ptxas-options=-v #,-abi=no
@@ -19,25 +19,22 @@ CXX  := g++ -O3
 LINK := g++ 
 
 # include and lib dirs (esp for cuda)
-INC_PATH := -I$(CUDA_INSTALL_PATH)/include
-LIB_PATH := -L$(CUDA_INSTALL_PATH)/lib64 -L/usr/local/lib 
-GLLIB_PATH := -L/usr/lib/nvidia-331
+INC_PATH := 
+LIB_PATH := 
+GLLIB_PATH := 
 
 # flags
-ARCH := sm_20
 COMMONFLAGS = -m64 
-NVCCFLAGS += $(COMMONFLAGS) -arch=$(ARCH) 
 CXXFLAGS += $(COMMONFLAGS) $(CXXWARN_FLAGS) 
 LINKFLAGS += $(COMMONFLAGS) 
 
 # libs
 #LIBS = -lcudart 					# cuda libs 		-lcutil_x86_64 -lshrutil_x86_64
 GLLIBS = -lGL -lglut -lGLU -lGLEW 				# openGL libs       -lGL -lGLEW  #-lX11 -lXi -lXmu 		
-LIBS = 	 -lcudart -lcurand -lcufft -lgsl -lgslcblas -ljpeg	# additional libs
+LIBS = 	 	# additional libs
 
 # files
 CC_OBJS  := $(CCFILES:.cpp=.o) # $(patsubst %.cpp, %.o, $(CPP_SOURCES))
-CU_OBJS  := $(CUFILES:.cu=.cu_o) # $(patsubst %.cu, %.cu_o, $(CU_SOURCES))
 
 # common dependencies	
 COM_DEP = 
@@ -47,8 +44,6 @@ all: $(TARGET)
 $(TARGET): $(CC_OBJS) $(CU_OBJS)
 	$(LINK) -o $(TARGET) $(LIB_PATH) $(GLLIB_PATH) $(CU_OBJS) $(CC_OBJS) $(LIBS) $(GLLIBS)
 
-%.cu_o : %.cu $(COM_DEP)
-	$(NVCC) $(NVCCFLAGS) $(INC_PATH) -o $@ -c $<
 
 %.o: %.cpp $(COM_DEP)
 	$(CXX) $(CXXFLAGS) $(INC_PATH) -o $@ -c $< 

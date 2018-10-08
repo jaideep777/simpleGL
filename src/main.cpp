@@ -12,9 +12,9 @@ int main(int argc, char **argv){
 
 	int nverts;
 	float *pos9;
-	float4 *col9;
+	float *col9;
 	
-	ifstream fin("odm_georeferenced_model.ply");
+	ifstream fin("/home/jaideep/ODMProjects/jubilee/odm_georeferencing/odm_georeferenced_model.ply");
 	string s, u;
 	int prop_count = 0;
 	while (fin >> s && s != "end_header"){
@@ -25,10 +25,11 @@ int main(int argc, char **argv){
 		if (s == "property") ++prop_count;
 	}
 
+	nverts = 100000;
 	cout << "PLY: vertices = " << nverts << ", properties = " << prop_count << endl; 	
 
 	pos9 = new float[3*nverts];
-	col9 = new float4[nverts];
+	col9 = new float[4*nverts];
 	
 	float * vals = new float[prop_count];
 	
@@ -40,7 +41,10 @@ int main(int argc, char **argv){
 		pos9[3*i+1] = vals[2];
 		pos9[3*i+2] = vals[0];
 		
-		col9[i] = make_float4(vals[3]/255, vals[4]/255, vals[5]/255, 1);
+		col9[4*i+0] = vals[3]/255; 
+		col9[4*i+1] = vals[4]/255; 
+		col9[4*i+2] = vals[5]/255; 
+		col9[4*i+3] = 1;
 	} 
 	
 
@@ -48,8 +52,8 @@ int main(int argc, char **argv){
 		cout << 
 		pos9[3*i+0] << " " << 
 		pos9[3*i+1] << " " << 
-		pos9[3*i+2] << " " <<
-		col9[i].x << " " << col9[i].y << " " << col9[i].z << " " << col9[i].w << endl;  
+		pos9[3*i+2] << " " << endl;
+		//col9[i].x << " " << col9[i].y << " " << col9[i].z << " " << col9[i].w << endl;  
 	} 
 
 
@@ -61,7 +65,7 @@ int main(int argc, char **argv){
 	pt.pointSize = 1;
 	pt.setVertices(pos9);	
 //	pt.createColorBuffer();
-	pt.setColors(col9);
+	pt.setColors((float*)col9);
 	pt.autoExtent(pos9);
 
 
@@ -118,17 +122,17 @@ int main(int argc, char **argv){
 //	pt2.setExtent(-.5, .5, -.5, .5);
 	
 	float pos3[] = {-100,0,0, 100,0,0, 0,-100,0, 0,100,0, 0,0,-100, 0,0,100};
-	float4 col3[] = {make_float4(1,0,0, 0.5),
-				    make_float4(1,0,0, 0.5),
-				    make_float4(0,1,0, 0.5),
-				    make_float4(0,1,0, 0.5),
-				    make_float4(0.0,0.8,1, 0.5),
-				    make_float4(0.0,0.8,1, 0.5)
+	float col3[] = {1,0,0, 0.5	,
+				     1,0,0, 0.5,
+				     0,1,0, 0.5,
+				     0,1,0, 0.5,
+				     0.0,0.8,1, 0.5,
+				     0.0,0.8,1, 0.5
 				   };
 	
 	Shape axis(6, 3, "lines");
 	axis.setVertices(pos3);
-	axis.setColors(col3);
+	axis.setColors((float*)col3);
 
 //	Palette p(20);
 //	p.create_grayscale();

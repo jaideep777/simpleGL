@@ -67,17 +67,17 @@ void Shape::setRenderVariable(string s, float  f){
 	glUniform1f(loc, f);
 }
 
-void Shape::setRenderVariable(string s, float2 f){
+void Shape::setRenderVariable(string s, glm::vec2 f){
 	GLuint loc = glGetUniformLocation(program_id, s.c_str());
 	glUniform2f(loc, f.x, f.y);
 }
 
-void Shape::setRenderVariable(string s, float3 f){
+void Shape::setRenderVariable(string s, glm::vec3 f){
 	GLuint loc = glGetUniformLocation(program_id, s.c_str());
 	glUniform3f(loc, f.x, f.y, f.z);
 }
 
-void Shape::setRenderVariable(string s, float4 f){
+void Shape::setRenderVariable(string s, glm::vec4 f){
 	GLuint loc = glGetUniformLocation(program_id, s.c_str());
 	glUniform4f(loc, f.x, f.y, f.z, f.w);
 }
@@ -265,7 +265,7 @@ void Shape::setVertices(void* data){
 }
 
 
-void Shape::setColors(float4 *colData){
+void Shape::setColors(float *colData){
 	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_id);
 	glBufferData(GL_ARRAY_BUFFER, 4*sizeof(float)*nVertices, colData, GL_DYNAMIC_DRAW); 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
