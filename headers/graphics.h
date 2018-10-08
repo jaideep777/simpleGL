@@ -30,7 +30,7 @@ class Palette{
 	void create_grayscale(float start=0, float end=1);
 	void create_ramp(glm::vec4 start, glm::vec4 end);	
 	void print();
-	vector <glm::vec4> map_values(float * v, int nval, float vmin = 1e20, float vmax = 1e20);
+	vector <float> map_values(float * v, int nval, int stride = 1, float vmin = 1e20, float vmax = 1e20);
 };
 
 /* =======================================================================

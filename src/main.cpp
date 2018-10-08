@@ -59,13 +59,17 @@ int main(int argc, char **argv){
 
 	init_hyperGL(&argc, argv);
 
+	Palette p(100);
+	p.create_rainbow();
+	
+	vector <float> cols9z = p.map_values(&pos9[1], nverts, 3);
 
 	Shape pt(nverts, 3, "points"); //, 4, -1, 1);
 //	pt.createShaders();
 	pt.pointSize = 1;
 	pt.setVertices(pos9);	
 //	pt.createColorBuffer();
-	pt.setColors((float*)col9);
+	pt.setColors(&cols9z[0]);
 	pt.autoExtent(pos9);
 
 

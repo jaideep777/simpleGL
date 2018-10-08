@@ -191,8 +191,8 @@ void Palette::print(){
 	cout << '\n';
 }
 
-vector <glm::vec4> Palette::map_values(float* v, int nval, float vmin, float vmax){
-	vector <glm::vec4> cols(nval);
+vector <float> Palette::map_values(float* v, int nval, int stride, float vmin, float vmax){
+	vector <float> cols(4*nval);
 	
 	float min_val = (vmin == 1e20f)? *min_element(v,v+nval):vmin;
 	float max_val = (vmax == 1e20f)? *max_element(v,v+nval):vmax;
@@ -202,13 +202,19 @@ vector <glm::vec4> Palette::map_values(float* v, int nval, float vmin, float vma
 //	cout << "nCol = " << nCol << ", colMax = " << colMax << ", colMin = " << colMin << '\n';
 	for (int i=0; i < nval; ++i) {
 		glm::vec4 c;
-		int colID = (v[i] - min_val)/(max_val-min_val)*(n-1);
+		int colID = (v[i*stride] - min_val)/(max_val-min_val)*(n-1);
 //		cout << "colid = " << colID << endl;
 		if (colID < 0 || colID > n-1){
-			cols[i] = glm::vec4(0.f,0.f,0.f,1.f);	// if color is out of range, return black
+			cols[4*i+0] = 0;	// if color is out of range, return black
+			cols[4*i+1] = 0;
+			cols[4*i+2] = 0;
+			cols[4*i+3] = 0;
 		}
 		else{
-			cols[i] = colors[colID];	// else return color from palette
+			cols[4*i+0] = colors[colID].r;	// else return color from palette
+			cols[4*i+1] = colors[colID].g;
+			cols[4*i+2] = colors[colID].b;
+			cols[4*i+3] = colors[colID].a;
 		}
 	}
 	return cols;
