@@ -93,6 +93,7 @@ void Shape::setShaderVariable(string s, glm::mat4 f){
 
 glm::vec4 HSVtoRGB(float h, float s, float v ){
 	glm::vec4 C;
+	C.a = 1;
 	
 	if( s == 0 ) {
 		// achromatic (grey)
@@ -160,6 +161,7 @@ void Palette::create_random(float start, float end){
 		colors[i].r = start + (end-start)*rand()/RAND_MAX;
 		colors[i].g = start + (end-start)*rand()/RAND_MAX;
 		colors[i].b = start + (end-start)*rand()/RAND_MAX;
+		colors[i].a = 1;
 	}
 }
 
@@ -169,6 +171,7 @@ void Palette::create_grayscale(float start, float end){
 		colors[i].r = start + (end-start)*float(i)/(n-1);
 		colors[i].g = start + (end-start)*float(i)/(n-1);
 		colors[i].b = start + (end-start)*float(i)/(n-1);
+		colors[i].a = 1;
 	}
 }
 
@@ -178,6 +181,7 @@ void Palette::create_ramp(glm::vec4 start, glm::vec4 end){
 		colors[i].r = start.r + (end.r-start.r)*float(i)/(n-1);
 		colors[i].g = start.g + (end.g-start.g)*float(i)/(n-1);
 		colors[i].b = start.b + (end.b-start.b)*float(i)/(n-1);
+		colors[i].a = 1;
 	}
 }
 
@@ -191,18 +195,31 @@ void Palette::print(){
 	cout << '\n';
 }
 
+
+// WORKS for 2D and 3D
 vector <float> Palette::map_values(float* v, int nval, int stride, float vmin, float vmax){
 	vector <float> cols(4*nval);
 	
-	float min_val = (vmin == 1e20f)? *min_element(v,v+nval):vmin;
-	float max_val = (vmax == 1e20f)? *max_element(v,v+nval):vmax;
+	float min_val = v[0], max_val = v[0];
+//	double mean = v[0];
+	for (int i=1; i < nval; ++i){
+		min_val = min(min_val, v[stride*i]);
+		max_val = max(max_val, v[stride*i]);
+//		mean += v[stride*i];
+	}
+//	mean /= nval;
+	
+	if (vmin != 1e20f) min_val = vmin; 
+	if (vmax != 1e20f) max_val = vmax;
 
-//	cout << "minmax:" <<  min_val << " " << max_val << endl;
+	cout << "minmax:" <<  min_val << " " << max_val << endl;
+//	cout << "mean:" <<  mean << endl;
 //	colMax = max(fabs(colMax), fabs(colMin));
 //	cout << "nCol = " << nCol << ", colMax = " << colMax << ", colMin = " << colMin << '\n';
 	for (int i=0; i < nval; ++i) {
 		glm::vec4 c;
-		int colID = (v[i*stride] - min_val)/(max_val-min_val)*(n-1);
+		int colID = (v[stride*i] - min_val)/(max_val-min_val)*(n-1);
+//		cout << v[i*stride] << endl;
 //		cout << "colid = " << colID << endl;
 		if (colID < 0 || colID > n-1){
 			cols[4*i+0] = 0;	// if color is out of range, return black
@@ -314,30 +331,35 @@ void Shape::render(){
 }
 
 void Shape::autoExtent(float* data){
-	glm::vec3 centroid(0.f, 0.f, 0.f);
+
+	glm::dvec3 centroid(0.0, 0.0, 0.0); // use double because large accummulation is expected
 	glm::vec3 max(-1e20f, -1e20f, -1e20f);
 	glm::vec3 min(1e20f, 1e20f, 1e20f);
-	for (int i=0; i<nVertices*dim; i=i+dim){
-		centroid += glm::vec3(data[i], data[i+1], data[i+2]);
-		min.x = fmin(min.x, data[i]);
-		min.y = fmin(min.y, data[i+1]);
-		min.z = fmin(min.z, data[i+2]);
-		max.x = fmax(max.x, data[i]);
-		max.y = fmax(max.y, data[i+1]);
-		max.z = fmax(max.z, data[i+2]);
+
+	for (int i=0; i<nVertices; ++i){
+		centroid += glm::dvec3(data[dim*i], data[dim*i+1], data[dim*i+2]);
+
+		min.x = fmin(min.x, data[dim*i]);
+		max.x = fmax(max.x, data[dim*i]);
+
+		min.y = fmin(min.y, data[dim*i+1]);
+		max.y = fmax(max.y, data[dim*i+1]);
+
+		min.z = fmin(min.z, data[dim*i+2]);
+		max.z = fmax(max.z, data[dim*i+2]);
 	}
 	centroid /= nVertices;
 	float dz = max.z - min.z;
 	float dy = max.y - min.y;
 	float dx = max.x - min.x;
-	float scale = 2/fmax(fmax(dx, dy), dz)*40;
+	float scale = 2/fmax(fmax(dx, dy), dz)*50;
 
 	cout << "centroid: " << centroid.x << " " << centroid.y << " " << centroid.z << endl;
-	cout << "scale: " << scale;
+	cout << "scale: " << scale << endl;
 
 	model = glm::mat4(1.f);
 	model = glm::scale(model, glm::vec3(scale, scale, scale));
-	model = glm::translate(model, -centroid);
+	model = glm::translate(model, -glm::vec3(float(centroid.x), float(centroid.y), float(centroid.z)));
 }
 
 Shape2D::Shape2D(int nVert, string _type) : Shape(nVert, 2, _type) {}
@@ -768,8 +790,8 @@ void mouseMove(int x, int y){
 		glRenderer->camera_s *= 1+r;
 	}
 	if (mMousePressed == 1){
-		glRenderer->camera_ty -= 200*(y - mouse_y0)/h;	// -= because y is measured from top
-		glRenderer->camera_tx += 200*(x - mouse_x0)/w;
+		glRenderer->camera_ty -= (h/2.5)*(y - mouse_y0)/h;	// -= because y is measured from top
+		glRenderer->camera_tx += (w/2.5)*(x - mouse_x0)/w;
 	}
 	mouse_y0 = y;
 	mouse_x0 = x;

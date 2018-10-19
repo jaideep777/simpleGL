@@ -7,14 +7,55 @@ using namespace std;
 //#include "../utils/simple_initializer.h" 
 #include "../utils/simple_math.h"
 
+namespace fl{
+
+struct vec3{
+	float x;
+	float y;
+	float z;
+};
+
+}
+
+bool compare_z(const fl::vec3& p1, const fl::vec3& p2){
+	return (p1.z < p2.z);
+}
+
+bool compare_y(const fl::vec3& p1, const fl::vec3& p2){
+	return (p1.y < p2.y);
+}
+
+bool compare_x(const fl::vec3& p1, const fl::vec3& p2){
+	return (p1.x < p2.x);
+}
+
+void sort_by_y(float* begin, float* end){
+	sort((fl::vec3*)begin, (fl::vec3*)end, compare_y); 
+}
+	
+void sort_by_z(float* begin, float* end){
+	sort((fl::vec3*)begin, (fl::vec3*)end, compare_z); 
+}
+
+void sort_by_x(float* begin, float* end){
+	sort((fl::vec3*)begin, (fl::vec3*)end, compare_x); 
+}
+
 
 int main(int argc, char **argv){
+
+	float ptest[] = {1, 2, 3, 2, 3, 2, 3, 1, 1};
+//	vector <float> ptvec(ptest, ptest+9);
+
+	sort_by_y(ptest, ptest + 9);
+	for (int i=0; i<9; ++i) cout << ptest[i] << " ";
+	cout << "\n-----------------------------" << endl;
 
 	int nverts;
 	float *pos9;
 	float *col9;
 	
-	ifstream fin("/home/jaideep/ODMProjects/jubilee/odm_georeferencing/odm_georeferenced_model.ply");
+	ifstream fin("odm_georeferenced_model.ply");
 	string s, u;
 	int prop_count = 0;
 	while (fin >> s && s != "end_header"){
@@ -27,6 +68,8 @@ int main(int argc, char **argv){
 
 	nverts = 100000;
 	cout << "PLY: vertices = " << nverts << ", properties = " << prop_count << endl; 	
+
+	
 
 	pos9 = new float[3*nverts];
 	col9 = new float[4*nverts];
@@ -56,12 +99,20 @@ int main(int argc, char **argv){
 		//col9[i].x << " " << col9[i].y << " " << col9[i].z << " " << col9[i].w << endl;  
 	} 
 
-
+//	for (int i=0; i<6; ++i) cout << pos9[3*i] << " " << pos9[3*i+1] << " " << pos9[3*i+2] << endl;
+	cout << "sort...\n";
+	sort_by_y(pos9, pos9+3*nverts); 
+	for (int i=0; i<10; ++i) cout << pos9[3*i] << " " << pos9[3*i+1] << " " << pos9[3*i+2] << endl;
+ 
 	init_hyperGL(&argc, argv);
 
 	Palette p(100);
 	p.create_rainbow();
+//	p.print();
 	
+	float pos11[] = {-1.1, 1, 1.1, -2.2, 2, 2.2, -3.3, 3, 3.3};
+	vector <float> cols11z = p.map_values(&pos11[1], 3, 3); 
+
 	vector <float> cols9z = p.map_values(&pos9[1], nverts, 3);
 
 	Shape pt(nverts, 3, "points"); //, 4, -1, 1);
@@ -69,6 +120,7 @@ int main(int argc, char **argv){
 	pt.pointSize = 1;
 	pt.setVertices(pos9);	
 //	pt.createColorBuffer();
+//	pt.setColors(col9);
 	pt.setColors(&cols9z[0]);
 	pt.autoExtent(pos9);
 
@@ -137,6 +189,7 @@ int main(int argc, char **argv){
 	Shape axis(6, 3, "lines");
 	axis.setVertices(pos3);
 	axis.setColors((float*)col3);
+//	axis.autoExtent(pos3);
 
 //	Palette p(20);
 //	p.create_grayscale();
