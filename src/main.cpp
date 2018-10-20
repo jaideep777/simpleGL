@@ -42,6 +42,19 @@ void sort_by_x(float* begin, float* end){
 }
 
 
+vector <int> y_slices(float * pos, int n, float res){
+	vector <int> slice_indices(1,0);
+	float min = int(pos[3*0+1]/res)*res;
+	for (int i=0; i< n; ++i){
+		if (pos[3*i+1] > (min + res*slice_indices.size()) ){
+			slice_indices.push_back(i);
+			cout << "slice: " << i << ", value = " << pos[3*i+1] <<  endl;
+		}
+	}
+//	if (*slice_indices.end() != n-1) slice_indices.push_back(n-1);
+	return slice_indices;
+}
+
 int main(int argc, char **argv){
 
 	float ptest[] = {1, 2, 3, 2, 3, 2, 3, 1, 1};
@@ -66,7 +79,7 @@ int main(int argc, char **argv){
 		if (s == "property") ++prop_count;
 	}
 
-	nverts = 100000;
+//	nverts = 100000;
 	cout << "PLY: vertices = " << nverts << ", properties = " << prop_count << endl; 	
 
 	
@@ -100,9 +113,6 @@ int main(int argc, char **argv){
 	} 
 
 //	for (int i=0; i<6; ++i) cout << pos9[3*i] << " " << pos9[3*i+1] << " " << pos9[3*i+2] << endl;
-	cout << "sort...\n";
-	sort_by_y(pos9, pos9+3*nverts); 
-	for (int i=0; i<10; ++i) cout << pos9[3*i] << " " << pos9[3*i+1] << " " << pos9[3*i+2] << endl;
  
 	init_hyperGL(&argc, argv);
 
@@ -115,15 +125,40 @@ int main(int argc, char **argv){
 
 	vector <float> cols9z = p.map_values(&pos9[1], nverts, 3);
 
-	Shape pt(nverts, 3, "points"); //, 4, -1, 1);
+	Shape pt(nverts, 3, "points", true); //, 4, -1, 1);
 //	pt.createShaders();
 	pt.pointSize = 1;
 	pt.setVertices(pos9);	
 //	pt.createColorBuffer();
-//	pt.setColors(col9);
-	pt.setColors(&cols9z[0]);
-	pt.autoExtent(pos9);
+	pt.setColors(col9);
+//	pt.setColors(&cols9z[0]);
+	vector <float> ex = calcExtent(pos9, nverts, 3);
+	pt.setExtent(ex);
 
+
+	cout << "sort...\n";
+	sort_by_y(pos9, pos9+3*nverts); 
+	for (int i=0; i<10; ++i) cout << pos9[3*i] << " " << pos9[3*i+1] << " " << pos9[3*i+2] << endl;
+
+
+	vector <int> slices = y_slices(pos9, nverts, 0.25);
+	for (int i=0; i<slices.size(); ++i){
+		cout << "slices: " << slices[i] << ": " << pos9[3*slices[i]+1] << "\n";
+	}
+	cout << endl;
+
+	vector <Shape*> slices_shapes(slices.size());
+	for (int i=1; i<slices.size(); ++i){
+		int nv = slices[i]-slices[i-1];
+		slices_shapes[i-1] = new Shape(nv, 3, "points", false);
+		slices_shapes[i-1]->pointSize = 2;
+		slices_shapes[i-1]->setVertices(&pos9[3*slices[i-1]]);
+		slices_shapes[i-1]->setColors(&cols9z[4*slices[i-1]]);
+		slices_shapes[i-1]->setExtent(ex);
+	}
+	slices_shapes[0]->b_render = true;
+
+	int current_render = 0;
 
 //	float pos[] = { 50, 50, -10,//0.5,
 //				  25, 50, -20,//-0.5,
@@ -202,6 +237,11 @@ int main(int argc, char **argv){
 	
 	
 	while(1){       // infinite loop needed to poll anim_on signal.
+		slices_shapes[current_render]->b_render = false;
+		current_render = generic_count % (slices_shapes.size()-1);
+//		cout << "Currently rendering: " << current_render << "\n";
+		slices_shapes[current_render]->b_render = true;
+		
 		glutMainLoopEvent();
 		usleep(20000);
 	}

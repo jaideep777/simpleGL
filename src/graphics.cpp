@@ -6,7 +6,7 @@
 
 
 Renderer * glRenderer = NULL;
-
+int generic_count = 0;
 
 void loadShader(string filename, GLuint &shader_id, GLenum shader_type){
 
@@ -242,8 +242,9 @@ vector <float> Palette::map_values(float* v, int nval, int stride, float vmin, f
 // class Shape
 // ===========================================================
 
-Shape::Shape(int nVert, int components_per_vertex, string _type){
+Shape::Shape(int nVert, int components_per_vertex, string _type, bool ren){
 	
+	cout << "constructing shape..." << endl;
 	dim = components_per_vertex;
 	
 	string shader_name = as_string(dim) + "dpt";
@@ -267,6 +268,8 @@ Shape::Shape(int nVert, int components_per_vertex, string _type){
 	createShaders();
 	
 	glRenderer->addShape(this);
+	
+	b_render = ren;
 }
 
 Shape::~Shape(){
@@ -298,6 +301,8 @@ void Shape::setColors(float *colData){
 
 void Shape::render(){
 
+	if (!b_render) return;
+	
 	useProgram();
 	
 	// set the point size to match physical scale
@@ -330,6 +335,52 @@ void Shape::render(){
 	
 }
 
+vector <float> calcExtent(float* data, int nVertices, int dim){
+	glm::dvec3 centroid(0.0, 0.0, 0.0); // use double because large accummulation is expected
+	glm::vec3 max(-1e20f, -1e20f, -1e20f);
+	glm::vec3 min(1e20f, 1e20f, 1e20f);
+
+	for (int i=0; i<nVertices; ++i){
+		centroid += glm::dvec3(data[dim*i], data[dim*i+1], data[dim*i+2]);
+
+		min.x = fmin(min.x, data[dim*i]);
+		max.x = fmax(max.x, data[dim*i]);
+
+		min.y = fmin(min.y, data[dim*i+1]);
+		max.y = fmax(max.y, data[dim*i+1]);
+
+		min.z = fmin(min.z, data[dim*i+2]);
+		max.z = fmax(max.z, data[dim*i+2]);
+	}
+	centroid /= nVertices;
+	float dz = max.z - min.z;
+	float dy = max.y - min.y;
+	float dx = max.x - min.x;
+	float scale = 2/fmax(fmax(dx, dy), dz)*50;
+
+	cout << "centroid: " << centroid.x << " " << centroid.y << " " << centroid.z << endl;
+	cout << "scale: " << scale << endl;
+	
+	vector <float> temp(4*3); // centroid, min, max, scale
+	temp[0] = centroid.x;
+	temp[1] = centroid.y;
+	temp[2] = centroid.z;
+	
+	temp[3] = min.x;
+	temp[4] = min.y;
+	temp[5] = min.z;
+	
+	temp[6] = max.x;
+	temp[7] = max.y;
+	temp[8] = max.z;
+	
+	temp[9] = scale;
+	temp[10] = scale;
+	temp[11] = scale;
+	
+	return temp; 
+}
+
 void Shape::autoExtent(float* data){
 
 	glm::dvec3 centroid(0.0, 0.0, 0.0); // use double because large accummulation is expected
@@ -360,6 +411,12 @@ void Shape::autoExtent(float* data){
 	model = glm::mat4(1.f);
 	model = glm::scale(model, glm::vec3(scale, scale, scale));
 	model = glm::translate(model, -glm::vec3(float(centroid.x), float(centroid.y), float(centroid.z)));
+}
+
+void Shape::setExtent(vector <float>& ex){
+	model = glm::mat4(1.f);
+	model = glm::scale(model, glm::vec3(ex[9], ex[10], ex[11]));
+	model = glm::translate(model, -glm::vec3(float(ex[0]), float(ex[1]), float(ex[2])));
 }
 
 Shape2D::Shape2D(int nVert, string _type) : Shape(nVert, 2, _type) {}
@@ -632,6 +689,7 @@ bool init_hyperGL(int *argc, char **argv){
 	glutDisplayFunc(display); 
 	glutReshapeFunc(reshape);
 	glutKeyboardFunc(keyPress);
+	glutSpecialFunc(specialKeyPress);
 	glutMouseFunc(mousePress);
 	glutMotionFunc(mouseMove);
 //	glutIdleFunc(NULL);	// start animation immediately. Otherwise init with NULL	
@@ -706,6 +764,17 @@ void reshape(int w, int h){
 }
 
 
+void specialKeyPress(int key, int x, int y){
+	if (key == GLUT_KEY_UP){	// up arrow
+		++generic_count;
+		cout << "counter: " << generic_count << endl;
+	}
+	else if (key == GLUT_KEY_DOWN){	// down arrow
+		--generic_count;
+		cout << "counter: " << generic_count << endl;
+	}
+}
+
 void keyPress(unsigned char key, int x, int y){
 	if (!glRenderer->b_renderConsole){		
 		
@@ -722,7 +791,6 @@ void keyPress(unsigned char key, int x, int y){
 			glRenderer->toggleConsole();
 			cout << "Command-line turned on.\n";
 		}
-		
 		else{
 		}
 

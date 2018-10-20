@@ -58,9 +58,11 @@ class Shape{
 	
 	float pointSize;
 	
+	bool b_render;
+	
 	public:
-	Shape(){};
-	Shape(int nVert, int components_per_vertex, string _type);
+//	Shape(){};
+	Shape(int nVert, int components_per_vertex, string _type, bool ren = true);
 	~Shape();
 
 	void setVertices(void* data);
@@ -68,6 +70,7 @@ class Shape{
 	void createColorBuffer();
 	
 	void autoExtent(float* data);
+	void setExtent(vector <float>& ex);
 	
 	void deleteVBO();
 	void deleteShaders();
@@ -240,16 +243,19 @@ class Renderer{
 
 // pointers to the particle system to display and renderer to render display
 extern Renderer * glRenderer;
+extern int generic_count;
 //extern ParticleSystem * glPsys;
 
 // util functions
 void loadShader(string filename, GLuint &shader_id, GLenum shader_type);
+vector <float> calcExtent(float* data, int nVertices, int dim);
 
 // openGL callbacks
 bool init_hyperGL(int *argc, char **argv);
 void timerEvent(int value);
 void reshape(int w, int h);
 void keyPress(unsigned char key, int x, int y);
+void specialKeyPress(int key, int x, int y);
 void mouseMove(int x, int y);
 void mousePress(int button, int state, int x, int y);
 void display();

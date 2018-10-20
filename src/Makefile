@@ -15,8 +15,8 @@ CUFILES  :=  $(wildcard *.cu)
 
 # compilers
 NVCC := nvcc -O3 #--ptxas-options=-v #,-abi=no
-CXX  := g++ -O3
-LINK := g++ 
+CXX  := g++ -O3 -std=c++11
+LINK := g++ -std=c++11
 
 # include and lib dirs (esp for cuda)
 INC_PATH := 
