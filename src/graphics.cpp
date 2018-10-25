@@ -249,8 +249,8 @@ Shape::Shape(int nVert, int components_per_vertex, string _type, bool ren){
 	
 	string shader_name = as_string(dim) + "dpt";
 	
-	vertexShaderFile = "shaders/shader_vertex_" + shader_name + ".glsl";
-	fragmentShaderFile = "shaders/shader_fragment_" + shader_name + ".glsl";
+	vertexShaderFile = "src/shaders/shader_vertex_" + shader_name + ".glsl";
+	fragmentShaderFile = "src/shaders/shader_fragment_" + shader_name + ".glsl";
 	//doubleBuffered = dbuff;
 	//swap = 0;
 	type = _type;

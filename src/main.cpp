@@ -68,7 +68,7 @@ int main(int argc, char **argv){
 	float *pos9;
 	float *col9;
 	
-	ifstream fin("odm_georeferenced_model.ply");
+	ifstream fin("/home/jaideep/ODMProjects/jubilee/odm_georeferencing/odm_georeferenced_model.ply");
 	string s, u;
 	int prop_count = 0;
 	while (fin >> s && s != "end_header"){
@@ -123,9 +123,8 @@ int main(int argc, char **argv){
 	float pos11[] = {-1.1, 1, 1.1, -2.2, 2, 2.2, -3.3, 3, 3.3};
 	vector <float> cols11z = p.map_values(&pos11[1], 3, 3); 
 
-	vector <float> cols9z = p.map_values(&pos9[1], nverts, 3);
 
-	Shape pt(nverts, 3, "points", true); //, 4, -1, 1);
+	Shape pt(nverts, 3, "points", false); 
 //	pt.createShaders();
 	pt.pointSize = 1;
 	pt.setVertices(pos9);	
@@ -140,6 +139,7 @@ int main(int argc, char **argv){
 	sort_by_y(pos9, pos9+3*nverts); 
 	for (int i=0; i<10; ++i) cout << pos9[3*i] << " " << pos9[3*i+1] << " " << pos9[3*i+2] << endl;
 
+	vector <float> cols9z = p.map_values(&pos9[1], nverts, 3);
 
 	vector <int> slices = y_slices(pos9, nverts, 0.25);
 	for (int i=0; i<slices.size(); ++i){
