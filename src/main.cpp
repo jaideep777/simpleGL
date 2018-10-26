@@ -73,59 +73,62 @@ vector <int> z_slices(float * pos, int n, float res){
 
 class DigitalElevModel{
     public:
-	int nx,ny;
-	float dx,dz,x0,z0,xmin,xmax,zmin,zmax;
-	vector<float>elev;
-//	DigitalElevModel(int _nx, int _ny, float _dx, float _dz, float _x0, float _z0){
+	int   nx, ny;	// number of rows and columns in DEM matrix
+	float dx, dy;	// x and y resolution (size of each grid-cell in DEM matrix)
+	float x0, y0;	// centre of the lower-left gridcell
+	float xmin, xmax, ymin, ymax;	// bounds
+	vector<float>elev;				// elevation
+
+	public:
+//	DigitalElevModel(int _nx, int _ny, float _dx, float _dy, float _x0, float _y0){
 //		nx   = _nx;			
 //		ny   = _ny;			
 //		dx   = _dx;			
-//		dz   = _dz;			
+//		dy   = _dy;			
 //		x0   = _x0;			
-//		z0   = _z0;	
+//		y0   = _y0;	
 //			
 //	}
+
 	DigitalElevModel(){}
-	void init(int _nx, int _ny, float _dx, float _dz, float _x0, float _z0){
+
+	void init(int _nx, int _ny, float _dx, float _dy, float _x0, float _y0){
 		nx   = _nx;			
 		ny   = _ny;			
 		dx   = _dx;			
-		dz   = _dz;			
+		dy   = _dy;			
 		x0   = _x0;			
-		z0   = _z0;
+		y0   = _y0;
 		
 		xmin = x0 - dx/2;
-		zmin = x0 - dx/2;
-		
+		ymin = x0 - dx/2;
 		xmax = (dx*nx) + xmin; 
-		zmax = (dz*ny) + zmin;
+		ymax = (dy*ny) + ymin;
 		
 		elev.resize(nx*ny);
 		
 	}
 	
-	void initFromBounds(int _xmin, int _xmax, float _zmin, float _zmax, float _dx, float _dz){
+	void initFromBounds(int _xmin, int _xmax, float _ymin, float _ymax, float _dx, float _dy){
 		xmin = _xmin;			
 		xmax = _xmax;			
-		zmin = _zmin;			
-		zmax = _zmax;			
+		ymin = _ymin;			
+		ymax = _ymax;			
 		dx   = _dx;			
-		dz   = _dz;
+		dy   = _dy;
 		nx   =  (xmax- xmin)/ dx ; 
-		ny   =  (zmax- zmin)/ dz ; 
+		ny   =  (ymax- ymin)/ dy ; 
 		x0   =  xmin + dx/2; 
-		z0   =  zmin + dz/2;
+		y0   =  ymin + dy/2;
 		
-		
+		elev.resize(nx*ny);
 		 			
 	}
 	
-	vector<int> get_index(float x, float z){
-		float ix = floor((x- xmin)/ dx);
-		float iz = floor((z- zmin)/ dz);
+	vector<int> get_index(float x, float y){
 		vector<int>index(2);
-		index[0] = ix;
-		index[1] = iz;
+		index[0] = floor((x- xmin)/ dx);
+		index[1] = floor((y- ymin)/ dy);
 		return index;
 	}
 	
@@ -135,10 +138,13 @@ class DigitalElevModel{
 class PointCloud{
     public:
     int nverts;
-    float dx,dz;
+    float dx,dy;
     int nx,ny;
     vector <float> points;
+
     DigitalElevModel dem;
+
+	public:
     void read_las(string file){
         ifstream ifs;
         ifs.open(file.c_str(),ios::in | ios::binary);
@@ -168,17 +174,18 @@ class PointCloud{
     void createDEM(){
 		float xmin = min_element((fl::vec3*)points.data(), (fl::vec3*)(points.data()+3*nverts), compare_x)->x;
 		float xmax = max_element((fl::vec3*)points.data(), (fl::vec3*)(points.data()+3*nverts), compare_x)->x;
-		float zmin = min_element((fl::vec3*)points.data(), (fl::vec3*)(points.data()+3*nverts), compare_z)->z;
-		float zmax = max_element((fl::vec3*)points.data(), (fl::vec3*)(points.data()+3*nverts), compare_z)->z;
+		float ymin = min_element((fl::vec3*)points.data(), (fl::vec3*)(points.data()+3*nverts), compare_y)->y;
+		float ymax = max_element((fl::vec3*)points.data(), (fl::vec3*)(points.data()+3*nverts), compare_y)->y;
 		cout << "x range: " << xmin << " " << xmax << endl;      
-		cout << "z range: " << zmin << " " << zmax << endl;        
+		cout << "y range: " << ymin << " " << ymax << endl;        
 		
 		xmin = floor(xmin/dx)*dx;
 		xmax = ceil(xmax/dx)*dx;
-		zmin = floor(zmin/dz)*dz;
-		zmax = ceil(zmax/dz)*dz;
-		dem.initFromBounds(xmin,xmax,zmin,zmax,0.5,0.5);
-		//dem.init(nx,ny,dx,dz,xmin,zmin);
+		ymin = floor(ymin/dy)*dy;
+		ymax = ceil(ymax/dy)*dy;
+
+		dem.initFromBounds(xmin,xmax,ymin,ymax,0.5,0.5);
+		//dem.init(nx,ny,dx,dy,xmin,ymin);
 	}
 	
 	
