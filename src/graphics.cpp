@@ -520,18 +520,29 @@ void Renderer::init(){
 	b_renderAxes = false;
 	b_renderColorMap = true;
 
+	up_axis = 001;
+
 	window_width = 512;
 	window_height = 512;
 	
 //	view = glm::translate(glm::mat4(1.0f), glm::vec3(0.f, 0.f, -100.0f) );
 	camera_tx = camera_ty = camera_rx = camera_ry = 0;
 	camera_s = 1;
-	
-	view = glm::lookAt(glm::vec3(0.0f, 0.0f, 100.0f), 
-  		   			   glm::vec3(0.0f, 0.0f, 0.0f), 
-  		   			   glm::vec3(0.0f, 1.0f, 0.0f));
-  	view = glm::translate(view, glm::vec3(camera_tx, camera_ty, 0));
-  		   			   
+
+	if (up_axis == 010){	
+		view = glm::lookAt(glm::vec3(0.0f, 0.0f, 100.0f), 
+						   glm::vec3(0.0f, 0.0f, 0.0f), 
+						   glm::vec3(0.0f, 1.0f, 0.0f));
+	  	view = glm::translate(view, glm::vec3(camera_tx, camera_ty, 0));
+  	}
+ 	else if (up_axis == 001){
+		view = glm::lookAt(glm::vec3(0.0f, -100.0f, 0.0f), 
+						   glm::vec3(0.0f, 0.0f, 0.0f), 
+						   glm::vec3(0.0f, 0.0f, 1.0f));
+	  	view = glm::translate(view, glm::vec3(camera_tx, camera_ty, 0));
+ 	}
+ 	
+ 	 	
 	projection = glm::perspective(glm::radians(90.0f), float(window_width) / window_height, 0.1f, 1000.0f);
 	//projection = glm::ortho(0.0f, 100.0f, 0.0f, 100.0f, 0.f, 100.0f);
 
@@ -721,14 +732,25 @@ void display(){
 	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	glRenderer->view = glm::lookAt(glm::vec3(0.0f, 0.0f, 100.0f), 
-  		   			   glm::vec3(0.0f, 0.0f, 0.0f), 
-  		   			   glm::vec3(0.0f, 1.0f, 0.0f));
-  	glRenderer->view = glm::translate(glRenderer->view, glm::vec3(glRenderer->camera_tx, glRenderer->camera_ty, 0));
-  	glRenderer->view = glm::scale(glRenderer->view, glm::vec3(glRenderer->camera_s, glRenderer->camera_s, glRenderer->camera_s));
-  	glRenderer->view = glm::rotate(glRenderer->view, glRenderer->camera_rx*0.1f, glm::vec3(1.f, 0.f, 0.f));
-  	glRenderer->view = glm::rotate(glRenderer->view, glRenderer->camera_ry*0.1f, glm::vec3(0.f, 1.f, 0.f));
-
+	if (glRenderer->up_axis == 010){
+		glRenderer->view = glm::lookAt(glm::vec3(0.0f, 0.0f, 100.0f), 
+	  								   glm::vec3(0.0f, 0.0f, 0.0f),
+	  								   glm::vec3(0.0f, 1.0f, 0.0f));
+	  	glRenderer->view = glm::translate(glRenderer->view, glm::vec3(glRenderer->camera_tx, glRenderer->camera_ty, 0));
+	  	glRenderer->view = glm::scale(glRenderer->view, glm::vec3(glRenderer->camera_s, glRenderer->camera_s, glRenderer->camera_s));
+	  	glRenderer->view = glm::rotate(glRenderer->view, glRenderer->camera_rx*0.1f, glm::vec3(1.f, 0.f, 0.f));
+	  	glRenderer->view = glm::rotate(glRenderer->view, glRenderer->camera_ry*0.1f, glm::vec3(0.f, 1.f, 0.f));
+	}
+	else if (glRenderer->up_axis == 001){
+		glRenderer->view = glm::lookAt(glm::vec3(0.0f, -100.0f, 0.0f), 
+	  								   glm::vec3(0.0f, 0.0f, 0.0f),
+	  								   glm::vec3(0.0f, 0.0f, 1.0f));
+	  	glRenderer->view = glm::translate(glRenderer->view, glm::vec3(glRenderer->camera_tx, 0, glRenderer->camera_ty));
+	  	glRenderer->view = glm::scale(glRenderer->view, glm::vec3(glRenderer->camera_s, glRenderer->camera_s, glRenderer->camera_s));
+	  	glRenderer->view = glm::rotate(glRenderer->view, glRenderer->camera_rx*0.1f, glm::vec3(1.f, 0.f, 0.f));
+	  	glRenderer->view = glm::rotate(glRenderer->view, glRenderer->camera_ry*0.1f, glm::vec3(0.f, 0.f, 1.f));
+	}
+		
 //	render all shapes in list
 	for (int i=0; i<glRenderer->shapes_vec.size(); ++i){
 		Shape * s = glRenderer->shapes_vec[i];

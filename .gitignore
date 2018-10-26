@@ -7,7 +7,7 @@
 *.o
 *.cu_o
 *.so
-*.cppx
+
 *.cux
 1
 .Rhistory

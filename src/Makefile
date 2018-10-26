@@ -19,8 +19,8 @@ CXX  := g++ -O3 -std=c++11
 LINK := g++ -std=c++11
 
 # include and lib dirs (esp for cuda)
-INC_PATH := 
-LIB_PATH := 
+INC_PATH := /usr/local/liblas/include
+LIB_PATH := /usr/local/liblas/lib
 GLLIB_PATH := 
 
 # flags

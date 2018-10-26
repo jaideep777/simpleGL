@@ -171,8 +171,9 @@ class Renderer{
 	
 	glm::mat4 view, projection;
 	float camera_tx, camera_ty;
-	float camera_tz, camera_s, camera_rx, camera_ry;
+	float camera_s, camera_rx, camera_ry;
 	
+	int up_axis;
 	
 	// update intervals/steps
 	int nSkip;				// number of steps to skip before re-rendering

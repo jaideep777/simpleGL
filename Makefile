@@ -15,8 +15,8 @@ CCFILES  :=  $(wildcard src/*.cpp)
 # compilers
 
 # include and lib dirs (esp for cuda)
-INC_PATH := 
-LIB_PATH := 
+INC_PATH := -I/usr/local/liblas/include
+LIB_PATH := -L/usr/local/liblas/lib
 GLLIB_PATH := 
 
 # flags
@@ -27,7 +27,7 @@ LINKFLAGS += $(COMMONFLAGS)
 # libs
 #LIBS = -lcudart 					# cuda libs 		-lcutil_x86_64 -lshrutil_x86_64
 GLLIBS = -lGL -lglut -lGLU -lGLEW 				# openGL libs       -lGL -lGLEW  #-lX11 -lXi -lXmu 		
-LIBS = 	 	# additional libs
+LIBS = 	 -llas 	# additional libs
 
 # files
 OBJECTS = $(patsubst src/%.cpp, build/%.o, $(CCFILES))
