@@ -24,7 +24,7 @@ void loadShader(string filename, GLuint &shader_id, GLenum shader_type){
 void Shape::createShaders(){
 	GLenum ErrorCheckValue = glGetError();
 
-	cout << "creating shaders for " << objName << "... "; 
+//	cout << "creating shaders for " << objName << "... "; 
 
 	loadShader(vertexShaderFile, vertexShader_id, GL_VERTEX_SHADER);	
 	loadShader(fragmentShaderFile, fragmentShader_id, GL_FRAGMENT_SHADER);
@@ -42,7 +42,7 @@ void Shape::createShaders(){
 		cout << "ERROR: Could not create the shaders: " << gluErrorString(ErrorCheckValue) << endl;
 	}
 
-	cout << "DONE." << endl;
+//	cout << "DONE." << endl;
 }
 
 
@@ -244,7 +244,7 @@ vector <float> Palette::map_values(float* v, int nval, int stride, float vmin, f
 
 Shape::Shape(int nVert, int components_per_vertex, string _type, bool ren){
 	
-	cout << "constructing shape..." << endl;
+//	cout << "constructing shape..." << endl;
 	dim = components_per_vertex;
 	
 	string shader_name = as_string(dim) + "dpt";
@@ -258,7 +258,7 @@ Shape::Shape(int nVert, int components_per_vertex, string _type, bool ren){
 	model = glm::mat4(1.0f);
 	pointSize = 1;
 
-	cout << "create " << objName << endl;
+//	cout << "create " << objName << endl;
 	// create vertex buffer
 	glGenBuffers(1, &vbo_id);					// create buffer ids and store in array
 
@@ -276,7 +276,7 @@ Shape::~Shape(){
 	
 	deleteShaders();
 	
-	cout << "destroy " << objName << endl;
+//	cout << "destroy " << objName << endl;
 	glDeleteBuffers(1, &vbo_id);
 	glDeleteBuffers(1, &colorBuffer_id);
 }

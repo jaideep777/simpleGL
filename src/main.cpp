@@ -6,7 +6,6 @@
 using namespace std;
 
 #include "../headers/graphics.h"
-//#include "../utils/simple_initializer.h" 
 #include "../utils/simple_math.h"
 
 namespace fl{
@@ -132,6 +131,17 @@ class DigitalElevModel{
 		return index;
 	}
 	
+	void printToFile(string filename){
+		ofstream fout(filename.c_str());
+		for (int j=0; j<ny; ++j){
+			for (int i=0; i<nx; ++i){
+				fout << elev[j*nx+i] << "\t";
+			}
+			fout << "\n";
+		}
+		fout.close();
+	}
+	
 };
 
 
@@ -171,7 +181,7 @@ class PointCloud{
 
     }
     
-    void createDEM(){
+    void createDEM(float dx, float dy){
 		float xmin = min_element((fl::vec3*)points.data(), (fl::vec3*)(points.data()+3*nverts), compare_x)->x;
 		float xmax = max_element((fl::vec3*)points.data(), (fl::vec3*)(points.data()+3*nverts), compare_x)->x;
 		float ymin = min_element((fl::vec3*)points.data(), (fl::vec3*)(points.data()+3*nverts), compare_y)->y;
@@ -184,11 +194,33 @@ class PointCloud{
 		ymin = floor(ymin/dy)*dy;
 		ymax = ceil(ymax/dy)*dy;
 
-		dem.initFromBounds(xmin,xmax,ymin,ymax,0.5,0.5);
+		dem.initFromBounds(xmin,xmax,ymin,ymax,dx,dy);
 		//dem.init(nx,ny,dx,dy,xmin,ymin);
+		
+		fill(dem.elev.begin(), dem.elev.end(), 1e20);	// initialize all elevations with 1e20
+		for (int k=0; k<nverts; ++k){
+			int ix = floor((points[3*k+0]- dem.xmin)/ dem.dx);
+			int iy = floor((points[3*k+1]- dem.ymin)/ dem.dy);
+			dem.elev[iy*dem.nx+ix] = min(points[3*k+2], dem.elev[iy*dem.nx+ix]);
+		}
+		
 	}
+
+	void subtractDEM(){
+		for (int k=0; k<nverts; ++k){
+			int ix = floor((points[3*k+0]- dem.xmin)/ dem.dx);
+			int iy = floor((points[3*k+1]- dem.ymin)/ dem.dy);
+			points[3*k+2] -= dem.elev[iy*dem.nx+ix];	// TODO: subract interpolated value
+		}
+	}	
 	
-	
+	void deleteGround(){
+		for (int k=0; k<nverts; ++k){
+			int ix = floor((points[3*k+0]- dem.xmin)/ dem.dx);
+			int iy = floor((points[3*k+1]- dem.ymin)/ dem.dy);
+			if (points[3*k+2] < 0.5) points[3*k+0] = points[3*k+1] = points[3*k+2] = 0; 
+		}
+	}
     
 };
 
@@ -196,9 +228,11 @@ class PointCloud{
 int main(int argc, char **argv){
 
     PointCloud cr;
-    cr.read_las("/home/jaideep/Data/LIDAR/2017-02-13_20-51-49.las");
-	//cr.createDEM(0.5,0.5);
-	
+    cr.read_las("/home/jaideep/Data/LIDAR/2017-02-20_21-47-24.las");
+	cr.createDEM(0.5,0.5);
+	cr.dem.printToFile("dem.txt");
+	cr.subtractDEM();
+//	cr.deleteGround();
 
     init_hyperGL(&argc, argv);
 
@@ -210,13 +244,13 @@ int main(int argc, char **argv){
 //    vector <float> cols11z = p.map_values(&pos11[1], 3, 3); 
 
     cout << "sort...\n";
-//    sort_by_z(cr.points.data(), cr.points.data()+3*cr.nverts); 
-    sort_by_y(cr.points.data(), cr.points.data()+3*cr.nverts); 
+    sort_by_z(cr.points.data(), cr.points.data()+3*cr.nverts); 
+//    sort_by_y(cr.points.data(), cr.points.data()+3*cr.nverts); 
     for (int i=0; i<10; ++i) cout << cr.points[3*i] << " " << cr.points[3*i+1] << " " << cr.points[3*i+2] << endl;
 
     vector <float> cols9z = p.map_values(&cr.points[2], cr.nverts, 3);
 
-    Shape pt(cr.nverts, 3, "points", false); //, 4, -1, 1);
+    Shape pt(cr.nverts, 3, "points", true); //, 4, -1, 1);
 //    pt.createShaders();
 //    pt.pointSize = 1;
     pt.setVertices(cr.points.data());    
@@ -228,23 +262,23 @@ int main(int argc, char **argv){
  
  
 //    vector <int> slices = z_slices(cr.points.data(), cr.nverts, 0.1);
-//    vector <int> slices = z_slices(cr.points.data(), cr.nverts, 1);
-    vector <int> slices = y_slices(cr.points.data(), cr.nverts, 10);
-    for (int i=0; i<slices.size(); ++i){
-        cout << "slices: " << slices[i] << ": " << cr.points[3*slices[i]+2] << "\n";
-    }
-    cout << endl;
+////    vector <int> slices = z_slices(cr.points.data(), cr.nverts, 1);
+////    vector <int> slices = y_slices(cr.points.data(), cr.nverts, 10);
+//    for (int i=0; i<slices.size(); ++i){
+//        cout << "slices: " << slices[i] << ": " << cr.points[3*slices[i]+2] << "\n";
+//    }
+//    cout << endl;
 
-    vector <Shape*> slices_shapes(slices.size());
-    for (int i=1; i<slices.size(); ++i){
-        int nv = slices[i]-slices[i-1];
-        slices_shapes[i-1] = new Shape(nv, 3, "points", false);
-        slices_shapes[i-1]->pointSize = 1;
-        slices_shapes[i-1]->setVertices(&cr.points[3*slices[i-1]]);
-        slices_shapes[i-1]->setColors(&cols9z[4*slices[i-1]]);
-        slices_shapes[i-1]->setExtent(ex);
-    }
-    slices_shapes[0]->b_render = true;
+//    vector <Shape*> slices_shapes(slices.size());
+//    for (int i=1; i<slices.size(); ++i){
+//        int nv = slices[i]-slices[i-1];
+//        slices_shapes[i-1] = new Shape(nv, 3, "points", false);
+//        slices_shapes[i-1]->pointSize = 1;
+//        slices_shapes[i-1]->setVertices(&cr.points[3*slices[i-1]]);
+//        slices_shapes[i-1]->setColors(&cols9z[4*slices[i-1]]);
+//        slices_shapes[i-1]->setExtent(ex);
+//    }
+//    slices_shapes[0]->b_render = true;
 
     int current_render = 0;
 
@@ -275,10 +309,10 @@ int main(int argc, char **argv){
     
     
     while(1){       // infinite loop needed to poll anim_on signal.
-        slices_shapes[current_render]->b_render = false;
-        current_render = generic_count % (slices_shapes.size()-1);
-//        cout << "Currently rendering: " << current_render << "\n";
-        slices_shapes[current_render]->b_render = true;
+//        slices_shapes[current_render]->b_render = false;
+//        current_render = generic_count % (slices_shapes.size()-1);
+////        cout << "Currently rendering: " << current_render << "\n";
+//        slices_shapes[current_render]->b_render = true;
         
         glutMainLoopEvent();
         usleep(20000);
