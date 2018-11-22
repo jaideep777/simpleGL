@@ -9,8 +9,8 @@
 #include <string>
 
 #include "../utils/simple_timer.h"
-#include "../utils/simple_initializer.h"
-#include "../utils/simple_palettes.h"
+//#include "../utils/simple_initializer.h"
+//#include "../utils/simple_palettes.h"
 
 #include "../glm/glm.hpp"
 #include "../glm/gtc/matrix_transform.hpp"
