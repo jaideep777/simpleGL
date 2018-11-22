@@ -27,7 +27,7 @@ LINKFLAGS += $(COMMONFLAGS)
 # libs
 #LIBS = -lcudart 					# cuda libs 		-lcutil_x86_64 -lshrutil_x86_64
 GLLIBS = -lGL -lglut -lGLU -lGLEW 				# openGL libs       -lGL -lGLEW  #-lX11 -lXi -lXmu 		
-LIBS = 	 -llas 	# additional libs
+LIBS = 	  	# additional libs
 
 # files
 OBJECTS = $(patsubst src/%.cpp, build/%.o, $(CCFILES))
