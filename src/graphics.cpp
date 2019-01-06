@@ -4,7 +4,6 @@
 #include "../utils/simple_math.h"
 #include "../utils/simple_histogram.h"
 
-
 Renderer * glRenderer = NULL;
 int generic_count = 0;
 
@@ -426,83 +425,6 @@ void Shape2D::setExtent(float xmin, float xmax, float ymin, float ymax){
 }
 
 
-// ===========================================================
-// class Colormap
-// ===========================================================
-
-//ColorMap::ColorMap(){
-////	objName = "cmap";
-////	doubleBuffered = false;
-////	swap = 0;
-////	nlevs = 100;
-////	nx = 10;
-////	nVertices = 100;
-////	xmin = 0;
-////	xmax = 100;
-////	vertexShaderFile = "shaders/shader_vertex_" + objName + ".glsl";
-////	fragmentShaderFile = "shaders/shader_fragment_" + objName + ".glsl";
-////	type = "colormap";
-
-////	palette = createPalette_grayscale(nlevs, 0.1, 0.9);
-//}
-
-//ColorMap::ColorMap(string obj_name, int _nlevs, int _nx, float _xmin, float _xmax){
-//	objName = obj_name;
-////	doubleBuffered = dbuff;
-////	swap = 0;
-//	nlevs = _nlevs;
-//	nx = _nx;
-//	nVertices = nx*nx;
-//	xmin = _xmin;
-//	xmax = _xmax;
-//	vertexShaderFile = "shaders/shader_vertex_" + obj_name + ".glsl";
-//	fragmentShaderFile = "shaders/shader_fragment_" + obj_name + ".glsl";
-//	type = "colormap";
-
-//	palette = createPalette_grayscale(nlevs, 0.1, 0.9);
-//};
-
-
-//void ColorMap::createGridCentres(float2 *cmap_tmp){
-//	float dxC = (xmax-xmin)/nx;
-//	for (int iy=0; iy<nx; ++iy){
-//		for (int ix=0; ix<nx; ++ix){
-//			cmap_tmp[iy*nx+ix].x = xmin+dxC*(2*ix+1)/2.0;
-//			cmap_tmp[iy*nx+ix].y = xmin+dxC*(2*iy+1)/2.0;
-//		}
-//	} 
-
-//}
-
-
-
-
-//void ColorMap::render(){
-
-//	useProgram();
-//	
-//	// set the coord system bounds for getting orthograhic projection in vertex-shader
-//	setRenderVariable("bounds", make_float4(xmin, xmax, xmin, xmax));
-//	
-//	// set the point size to match physical scale
-//	float window_size_x = min(glutGet(GLUT_WINDOW_WIDTH), glutGet(GLUT_WINDOW_HEIGHT));
-//	float psize = window_size_x/nx;
-//	//if (psize < 1) psize = 1;
-//	setRenderVariable("psize", psize);
-
-//	glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
-//	glVertexAttribPointer(0, 2, GL_FLOAT, GL_FALSE, 0, 0);
-//	glEnableVertexAttribArray(0);	
-
-//	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_id);
-//	glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0, 0);
-//	glEnableVertexAttribArray(1);	
-
-//	glDrawArrays(GL_POINTS, 0, nVertices);
-
-////	swap = 1-swap;
-//}
-
 
 
 
@@ -685,9 +607,9 @@ bool init_hyperGL(int *argc, char **argv){
 	// init
 	glutInit(argc, argv);
 
-	glutInitContextVersion(4, 0);
-	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
-	glutInitContextProfile(GLUT_CORE_PROFILE);
+//	glutInitContextVersion(4, 0);
+//	glutInitContextFlags(GLUT_FORWARD_COMPATIBLE);
+//	glutInitContextProfile(GLUT_CORE_PROFILE);
 
 	glutInitWindowSize(glRenderer->window_width, glRenderer->window_height);
 	glutInitDisplayMode(GLUT_DEPTH | GLUT_RGBA | GLUT_DOUBLE);

@@ -15,13 +15,13 @@ CCFILES  :=  $(wildcard src/*.cpp)
 # compilers
 
 # include and lib dirs (esp for cuda)
-INC_PATH := -I/usr/local/liblas/include
-LIB_PATH := -L/usr/local/liblas/lib
+INC_PATH := 
+LIB_PATH := 
 GLLIB_PATH := 
 
 # flags
 COMMONFLAGS = -m64 
-CPPFLAGS = -O3 -Wl,--no-as-needed -std=c++11 -fPIC 
+CPPFLAGS = -O3 -std=c++11  
 LINKFLAGS += $(COMMONFLAGS) 
 
 # libs

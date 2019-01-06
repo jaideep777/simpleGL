@@ -96,69 +96,6 @@ class Shape2D : public Shape{
 	void setExtent(float xmin, float xmax, float ymin, float ymax);
 };
 
-//class ColorMap : public Shape{
-//	public:
-//	int nlevs;
-//	int nx;
-//	float xmin, xmax;
-
-//	vector <Colour_rgb> palette;
-
-//	ColorMap();
-//	ColorMap(string obj_name, int nlevs, int nx, float _xmin, float _xmax);
-//	
-//	void createGridCentres(float2* cmap_tmp);
-//	void updateColors(float* colData, int nCol, float cmin = -1e20, float cmax = -1e20);
-//	void render();
-
-//	void destroy();
-//};
-
-
-
-/* =======================================================================
-	NOTE ON USING A RENDERER
-
-	Renderer should be used as follows:
-
-	Renderer R;
-	R.init();	// renderer init MUST happen before GL init.
-	initGL();	// requires valid initialized renderer to be set for use by openGL 
-	
-	R.connect(particle_system_1);
-		... render
-	R.disconect();
-	
-	R.connect(particle_system_2);
-		... render
-	R.disconnect();
-	
-	...
-
-=======================================================================  */ 
-
-
-/* =======================================================================
-	NOTE ON PARTICLE COLURING METHOD
-	
-	class Particle has various particle attributes starting wA.
-	All attributes are of type float or int (4 bytes).
-	particleColorAttribute is a void pointer to the desired attribute 
-		in the first particle. i.e. &pvec[0].<attr>
-	since all particles are 4 bytes, this pointer can be made to point 
-		at the nth attribute as (float*)&pvec[0].<attr>+n. This is how 
-		the current coloring attributes are set using the number keys.
-		the value 'n' is stored in the iColorAttribute
-	once the pointer is set at the first value, it can be advanced by 
-		sizeof(Particle) bytes to get the same attribute value in the 
-		next particle. This is used to set the color buffer.
-	Of course, we need to know the type of the attribute to do this, 
-		so we store the types (int/float) in an array.
-	To get the final color, the value is discretized using the min/max
-		bounds and the palette is looked up to get RGB.
-=======================================================================  */ 
-
-
 enum UpdateMode {Step, Time};
 
 class Renderer{
@@ -186,10 +123,6 @@ class Renderer{
 	// layers - by default only layer 0 is visible
 	vector <bool> layerVis;
 	
-//	// colour palettes
-//	vector <Colour_rgb> palette;
-//	vector <Colour_rgb> palette_rand;
-//	vector <Colour_rgb> palette_grad;
 
 	unsigned int window_width;
 	unsigned int window_height;
