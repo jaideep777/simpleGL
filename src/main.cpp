@@ -24,7 +24,7 @@ int main(int argc, char ** argv){
 	init_hyperGL(&argc, argv);
 	
 
-	Shape pt(4, 3, "points"); //, 4, -1, 1);
+	Shape pt(4, 3, "points"); // (no. of points, components per point (2/3), render method);
 	pt.pointSize = 4;
 	pt.setVertices(pos);	
 	pt.setColors(col);
