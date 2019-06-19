@@ -1,10 +1,11 @@
 #version 330
  
-in vec4 ex_Color;
-out vec4 out_Color;
+in vec4 ex_col;
+
+out vec4 outColor;
  
 void main(void){
-	out_Color = ex_Color;
+	outColor = ex_col;
 }
 
 

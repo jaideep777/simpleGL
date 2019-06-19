@@ -25,10 +25,10 @@ int main(int argc, char ** argv){
 	
 
 	Shape pt(4, 3, "points"); // (no. of points, components per point (2/3), render method);
-	pt.pointSize = 4;
+	pt.pointSize = 8;
 	pt.setVertices(pos);	
 	pt.setColors(col);
-	pt.autoExtent(pos);	
+//	pt.autoExtent(pos);	
 
 	
 	float pos3[] = {0,0,0, 100,0,0, 0,0,0, 0,100,0, 0,0,0, 0,0,100};
@@ -44,6 +44,39 @@ int main(int argc, char ** argv){
 	axis.setVertices(pos3);
 	axis.setColors(col3);
 
+
+	GLfloat pos4[] = {
+	   50.f,  50.f, 0.0f,
+	  -50.f,  50.f, 0.0f,
+	  -50.f, -50.f, 0.0f,
+	   50.f, -50.f, 0.0f
+	};
+	float col4[] = {
+	  0, 0,1,1, 	0, 1, 0,1,
+	  1,0,0,1,      1,1,1,1
+	};
+	int tess_ids[] = {0,1,2,2,3,0};
+
+	unsigned char image[] = {
+	  0, 0,255,255, 	0, 255, 0,255,    0,255,255,255,
+	  255,0,0,255,    255,255,255,255,    255,255,0,255   
+	};
+	float UVs[] = {
+	   1.0f, 1.0f,
+	   0.0f, 1.0f,
+	   0.0f, 0.0f,
+	   1.0f, 0.0f
+	};
+
+//	Shape f(4, 3, "triangles", "tex"); // (no. of points, components per point (2/3), render method);
+//	f.pointSize = 8;
+//	f.setVertices(pos4);	
+////	f.setColors(col4);
+//	f.setElements(tess_ids, 6);
+//	f.applyTexture(UVs, image, 3,2);
+
+	Frame f1(0, 0, 50, 50, image);
+	f1.setExtent(-100,100,-100,100);
 
 	while(1){       // infinite loop needed to poll anim_on signal.
 		glutMainLoopEvent();

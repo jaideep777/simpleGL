@@ -7,6 +7,29 @@
 Renderer * glRenderer = NULL;
 int generic_count = 0;
 
+void printError(const char *context)
+{
+  GLenum error = glGetError();
+  if (error != GL_NO_ERROR) {
+    fprintf(stderr, "%s: %s\n", context, gluErrorString(error));
+  };
+}
+
+void printStatus(const char *step, GLuint context, GLuint status)
+{
+  GLint result = GL_FALSE;
+  glGetShaderiv(context, status, &result);
+  if (result == GL_FALSE) {
+    char buffer[1024];
+    if (status == GL_COMPILE_STATUS)
+      glGetShaderInfoLog(context, 1024, NULL, buffer);
+    else
+      glGetProgramInfoLog(context, 1024, NULL, buffer);
+    if (buffer[0])
+      fprintf(stderr, "%s: %s\n", step, buffer);
+  };
+}
+
 void loadShader(string filename, GLuint &shader_id, GLenum shader_type){
 
 	ifstream fin(filename.c_str());
@@ -16,14 +39,15 @@ void loadShader(string filename, GLuint &shader_id, GLenum shader_type){
 	shader_id = glCreateShader(shader_type);
 	glShaderSource(shader_id, 1, &glsl_src, NULL);
 	glCompileShader(shader_id);
-	if (GL_NO_ERROR != glGetError()) cout << "Error compiling shader!\n";
+	printStatus(filename.c_str(), shader_id, GL_COMPILE_STATUS);
+	
 }
 
 
 void Shape::createShaders(){
 	GLenum ErrorCheckValue = glGetError();
 
-//	cout << "creating shaders for " << objName << "... "; 
+	cout << "creating shaders from " << vertexShaderFile << endl; 
 
 	loadShader(vertexShaderFile, vertexShader_id, GL_VERTEX_SHADER);	
 	loadShader(fragmentShaderFile, fragmentShader_id, GL_FRAGMENT_SHADER);
@@ -32,14 +56,15 @@ void Shape::createShaders(){
 	glAttachShader(program_id, vertexShader_id);
 	glAttachShader(program_id, fragmentShader_id);
 	glLinkProgram(program_id);
-	glDeleteShader(fragmentShader_id);
-	glDeleteShader(vertexShader_id);
+	printStatus("link shader", program_id, GL_LINK_STATUS);
+
+//	glDeleteShader(fragmentShader_id);
+//	glDeleteShader(vertexShader_id);
 	
-	
-	ErrorCheckValue = glGetError();
-	if (ErrorCheckValue != GL_NO_ERROR){
-		cout << "ERROR: Could not create the shaders: " << gluErrorString(ErrorCheckValue) << endl;
-	}
+//	ErrorCheckValue = glGetError();
+//	if (ErrorCheckValue != GL_NO_ERROR){
+//		cout << "ERROR: Could not create the shaders: " << gluErrorString(ErrorCheckValue) << endl;
+//	}
 
 //	cout << "DONE." << endl;
 }
@@ -241,48 +266,51 @@ vector <float> Palette::map_values(float* v, int nval, int stride, float vmin, f
 // class Shape
 // ===========================================================
 
-Shape::Shape(int nVert, int components_per_vertex, string _type, bool ren){
+Shape::Shape(int nVert, int components_per_vertex, string _type, string shader_name, bool ren){
 	
 //	cout << "constructing shape..." << endl;
 	dim = components_per_vertex;
 	
-	string shader_name = as_string(dim) + "dpt";
+	if (shader_name == "") shader_name = as_string(dim) + "dpt";
 	
 	vertexShaderFile = "src/shaders/shader_vertex_" + shader_name + ".glsl";
 	fragmentShaderFile = "src/shaders/shader_fragment_" + shader_name + ".glsl";
-	//doubleBuffered = dbuff;
-	//swap = 0;
+	createShaders();
+
 	type = _type;
 	nVertices = nVert;
 	model = glm::mat4(1.0f);
 	pointSize = 1;
+	textured = false;
 
-//	cout << "create " << objName << endl;
 	// create vertex buffer
-	glGenBuffers(1, &vbo_id);					// create buffer ids and store in array
+	glGenBuffers(1, &vbo);					// create buffer ids and store in array
+	glBindBuffer(GL_ARRAY_BUFFER, vbo); 	// Bring buffer into current openGL context
+	glBufferData(GL_ARRAY_BUFFER, dim*sizeof(float)*nVertices, NULL, GL_DYNAMIC_DRAW); 
 
 	// create color buffer
-	glGenBuffers(1, &colorBuffer_id);
-
-	createShaders();
+	glGenBuffers(1, &cbo);
+	glBindBuffer(GL_ARRAY_BUFFER, cbo); 	// Bring buffer into current openGL context
+	glBufferData(GL_ARRAY_BUFFER, 4*sizeof(float)*nVertices, NULL, GL_DYNAMIC_DRAW); 
 	
 	glRenderer->addShape(this);
 	
 	b_render = ren;
 }
 
+
 Shape::~Shape(){
 	
 	deleteShaders();
 	
 //	cout << "destroy " << objName << endl;
-	glDeleteBuffers(1, &vbo_id);
-	glDeleteBuffers(1, &colorBuffer_id);
+	glDeleteBuffers(1, &vbo);
+	glDeleteBuffers(1, &cbo);
 }
 
 void Shape::setVertices(void* data){
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_id); 	// Bring 1st buffer into current openGL context
+	glBindBuffer(GL_ARRAY_BUFFER, vbo); 	// Bring 1st buffer into current openGL context
 	glBufferData(GL_ARRAY_BUFFER, dim*sizeof(float)*nVertices, data, GL_DYNAMIC_DRAW); 
 	// remove buffers from curent context. (appropriate buffers will be set bu CUDA resources)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -291,12 +319,40 @@ void Shape::setVertices(void* data){
 
 
 void Shape::setColors(float *colData){
-	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_id);
+	glBindBuffer(GL_ARRAY_BUFFER, cbo);
 	glBufferData(GL_ARRAY_BUFFER, 4*sizeof(float)*nVertices, colData, GL_DYNAMIC_DRAW); 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
 
+void Shape::setElements(int * elements, int n){
+	// create color buffer
+	nElements = n;
+	glGenBuffers(1, &ebo);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); 	// Bring buffer into current openGL context
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*n, elements, GL_DYNAMIC_DRAW); 
+}
+
+void Shape::applyTexture(float* uvs, unsigned char* pixels, int width, int height){
+	textured = true;
+
+	glGenBuffers(1, &tbo);
+	glBindBuffer(GL_ARRAY_BUFFER, tbo);
+	glBufferData(GL_ARRAY_BUFFER, nVertices*2*sizeof(float), uvs, GL_DYNAMIC_DRAW);
+
+	glGenTextures(1, &tex);
+	glActiveTexture(GL_TEXTURE0);
+	glBindTexture(GL_TEXTURE_2D, tex);
+	glUniform1i(glGetUniformLocation(program_id, "tex"), 0);
+	//	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, 2, 2, 0, GL_RGB, GL_FLOAT, pixels);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, width, height, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels); // After reading one row of texels, pointer advances to next 4 byte boundary. Therefore ALWAYS use 4byte colour types. 
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glGenerateMipmap(GL_TEXTURE_2D);
+
+}
 
 void Shape::render(){
 
@@ -305,34 +361,35 @@ void Shape::render(){
 	useProgram();
 	
 	// set the point size to match physical scale
-	setRenderVariable("psize", pointSize);
+	if (type == "points" ) setRenderVariable("psize", pointSize);
 	if (dim == 3) setShaderVariable("model", glRenderer->projection*glRenderer->view*model);
 	if (dim == 2) setShaderVariable("model", model);
 
-	glBindBuffer(GL_ARRAY_BUFFER, vbo_id);
-	glVertexAttribPointer(0, 			// index (as specified in vertex shader layout (location = index))
-						  dim, 			// size (1D/2D/3D/4D) (1-4)
-						  GL_FLOAT, 	// data type of each component
-						  GL_FALSE, 	// normalize?
-						  0, 			// stride (space between consecutive values) 0 = tightly packed
-						  0);			// 
-	glEnableVertexAttribArray(0);	
+	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	glVertexAttribPointer(glGetAttribLocation(program_id, "in_pos"), dim, GL_FLOAT, GL_FALSE, 0, 0);
+//							^ position of variable in shader         ^components, type        ^ stride and offset     
+	glBindBuffer(GL_ARRAY_BUFFER, cbo);
+	glVertexAttribPointer(glGetAttribLocation(program_id, "in_col"), 4, GL_FLOAT, GL_FALSE, 0, 0);
 
-	glBindBuffer(GL_ARRAY_BUFFER, colorBuffer_id);
-	glVertexAttribPointer(1, 
-						  4, 
-						  GL_FLOAT, 
-						  GL_FALSE, 
-						  0, 
-						  0);
-	glEnableVertexAttribArray(1);	
+	if (textured){
+	glBindBuffer(GL_ARRAY_BUFFER, tbo);
+	glVertexAttribPointer(glGetAttribLocation(program_id, "in_UV"), 2, GL_FLOAT, GL_FALSE, 0, 0);
+	}
+	
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	if (textured)  
+	glEnableVertexAttribArray(2);
 
-	if (type == "triangles") 	glDrawArrays(GL_TRIANGLES, 0, nVertices);
+
+	if (type == "triangles") 	glDrawElements(GL_TRIANGLES, nElements, GL_UNSIGNED_INT, (void *)0);
 	else if (type == "lines")  	glDrawArrays(GL_LINES, 0, nVertices);
 	else if (type == "points") 	glDrawArrays(GL_POINTS, 0, nVertices);
 	else 	  					glDrawArrays(GL_POINTS, 0, nVertices);
 	
 }
+
+
 
 vector <float> calcExtent(float* data, int nVertices, int dim){
 	glm::dvec3 centroid(0.0, 0.0, 0.0); // use double because large accummulation is expected
@@ -418,13 +475,43 @@ void Shape::setExtent(vector <float>& ex){
 	model = glm::translate(model, -glm::vec3(float(ex[0]), float(ex[1]), float(ex[2])));
 }
 
-Shape2D::Shape2D(int nVert, string _type) : Shape(nVert, 2, _type) {}
+Shape2D::Shape2D(int nVert, string _type, string shader_name, bool ren) : Shape(nVert, 2, _type, shader_name, ren) {}
 
 void Shape2D::setExtent(float xmin, float xmax, float ymin, float ymax){
 	model = glm::ortho(xmin, xmax, ymin, ymax, 0.f, 100.f);
 }
 
 
+Frame::Frame(float _x0, float _y0, float _x1, float _y1, unsigned char* image)
+	: Shape(4,2,"triangles", "tex2"){
+
+	model = glm::ortho(0.f, 100.f, 0.f, 100.f, -10.f, 100.f);
+
+	float verts[] = {
+		_x1, _y1,
+		_x0, _y1,
+		_x0, _y0,
+		_x1, _y0
+	};
+	
+	int tess_ids[] = {0,1,2,2,3,0};
+
+	float UVs[] = {
+	   1.0f, 1.0f,
+	   0.0f, 1.0f,
+	   0.0f, 0.0f,
+	   1.0f, 0.0f
+	};
+	setVertices(verts);	
+	setElements(tess_ids, 6);
+	applyTexture(UVs, image, 3,2);
+
+}
+
+void Frame::setExtent(float xmin, float xmax, float ymin, float ymax){
+	model = glm::ortho(xmin, xmax, ymin, ymax, 0.f, 100.f);
+
+}
 
 
 
@@ -442,7 +529,7 @@ void Renderer::init(){
 	b_renderAxes = false;
 	b_renderColorMap = true;
 
-	up_axis = 001;
+	up_axis = 010;
 
 	window_width = 512;
 	window_height = 512;

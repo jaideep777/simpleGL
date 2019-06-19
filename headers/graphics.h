@@ -43,9 +43,11 @@ class Shape{
 //	bool doubleBuffered;
 	int nVertices;	//!< Number of vertices that comprise the shape
 	int dim; 		//!< Number of components per vertex (2 for 2D, 3 for 3D)
+	int nElements;
 	
-	GLuint vbo_id;
-	GLuint colorBuffer_id;
+	GLuint vbo, cbo, ebo, tbo;
+	GLuint tex;
+	bool textured;
 
 	GLuint vertexShader_id;
 	GLuint fragmentShader_id;
@@ -62,10 +64,11 @@ class Shape{
 	
 	public:
 //	Shape(){};
-	Shape(int nVert, int components_per_vertex, string _type, bool ren = true);
+	Shape(int nVert, int components_per_vertex, string _type, string shader_name= "", bool ren = true);
 	~Shape();
 
 	void setVertices(void* data);
+	void setElements(int * elements, int n);
 	void createShaders();
 	void createColorBuffer();
 	
@@ -77,6 +80,7 @@ class Shape{
 	void deleteColorBuffer();
 	
 	void setColors(float* colData);
+	void applyTexture(float* uvs, unsigned char* pixels, int width, int height);
 	
 	void setRenderVariable(string s, float  f);
 	void setRenderVariable(string s, glm::vec2 f);
@@ -92,9 +96,18 @@ class Shape{
 
 class Shape2D : public Shape{
 	public:
-	Shape2D(int nVert, string _type);
+	Shape2D(int nVert, string _type, string shader_name= "", bool ren = true);
 	void setExtent(float xmin, float xmax, float ymin, float ymax);
 };
+
+
+class Frame : public Shape{
+	float x0, y0, x1, y1;
+	public:
+	Frame(float _x0, float _y0, float _x1, float _y1, unsigned char* image);
+	void setExtent(float xmin, float xmax, float ymin, float ymax);
+};
+
 
 enum UpdateMode {Step, Time};
 
