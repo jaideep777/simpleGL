@@ -483,24 +483,32 @@ void Shape2D::setExtent(float xmin, float xmax, float ymin, float ymax){
 
 
 Frame::Frame(float _x0, float _y0, float _x1, float _y1, unsigned char* image)
-	: Shape(4,2,"triangles", "tex2"){
+	: Shape(4,3,"triangles", "tex"){
 
-	model = glm::ortho(0.f, 100.f, 0.f, 100.f, -10.f, 100.f);
-
+//	model = glm::ortho(0.f, 100.f, 0.f, 100.f, -10.f, 100.f);
+	x0 = _x0; y0 = _y0; x1 = _x1; y1 = _y1;
+	layer = 0;
+	
 	float verts[] = {
-		_x1, _y1,
-		_x0, _y1,
-		_x0, _y0,
-		_x1, _y0
+		_x1, _y1, 0,
+		_x0, _y1, 0,
+		_x0, _y0, 0,
+		_x1, _y0, 0
 	};
 	
 	int tess_ids[] = {0,1,2,2,3,0};
 
-	float UVs[] = {
-	   1.0f, 1.0f,
-	   0.0f, 1.0f,
+//	float UVs[] = {
+//	   1.0f, 1.0f,
+//	   0.0f, 1.0f,
+//	   0.0f, 0.0f,
+//	   1.0f, 0.0f
+//	};
+	float UVs[] = {	// mirrorred along y
+	   1.0f, 0.0f,
 	   0.0f, 0.0f,
-	   1.0f, 0.0f
+	   0.0f, 1.0f,
+	   1.0f, 1.0f
 	};
 	setVertices(verts);	
 	setElements(tess_ids, 6);
@@ -513,6 +521,16 @@ void Frame::setExtent(float xmin, float xmax, float ymin, float ymax){
 
 }
 
+void Frame::setLayer(int l){
+	layer = l;
+	float verts[] = {
+		x1, y1, 0.1f*l,
+		x0, y1, 0.1f*l,
+		x0, y0, 0.1f*l,
+		x1, y0, 0.1f*l
+	};
+	setVertices(verts);	
+}
 
 
 // ===========================================================

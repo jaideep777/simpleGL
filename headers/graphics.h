@@ -103,8 +103,10 @@ class Shape2D : public Shape{
 
 class Frame : public Shape{
 	float x0, y0, x1, y1;
+	int layer;
 	public:
 	Frame(float _x0, float _y0, float _x1, float _y1, unsigned char* image);
+	void setLayer(int l);
 	void setExtent(float xmin, float xmax, float ymin, float ymax);
 };
 

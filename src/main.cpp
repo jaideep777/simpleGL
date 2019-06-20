@@ -76,8 +76,9 @@ int main(int argc, char ** argv){
 //	f.applyTexture(UVs, image, 3,2);
 
 	Frame f1(0, 0, 50, 50, image);
-	f1.setExtent(-100,100,-100,100);
-
+//	f1.setExtent(-100,100,-100,100);
+	f1.setLayer(100);
+	
 	while(1){       // infinite loop needed to poll anim_on signal.
 		glutMainLoopEvent();
 		usleep(20000);
