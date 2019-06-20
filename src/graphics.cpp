@@ -394,6 +394,7 @@ void Shape::render(){
 	if (textured){
 	glBindBuffer(GL_ARRAY_BUFFER, tbo);
 	glVertexAttribPointer(glGetAttribLocation(program_id, "in_UV"), 2, GL_FLOAT, GL_FALSE, 0, 0);
+	glBindTexture(GL_TEXTURE_2D, tex);
 	}
 	
 	glEnableVertexAttribArray(0);
