@@ -48,6 +48,7 @@ class Shape{
 	GLuint vbo, cbo, ebo, tbo;
 	GLuint tex;
 	bool textured;
+	bool usingElements;
 
 	GLuint vertexShader_id;
 	GLuint fragmentShader_id;

@@ -47,7 +47,7 @@ void loadShader(string filename, GLuint &shader_id, GLenum shader_type){
 void Shape::createShaders(){
 	GLenum ErrorCheckValue = glGetError();
 
-	cout << "creating shaders from " << vertexShaderFile << endl; 
+//	cout << "creating shaders from " << vertexShaderFile << endl; 
 
 	loadShader(vertexShaderFile, vertexShader_id, GL_VERTEX_SHADER);	
 	loadShader(fragmentShaderFile, fragmentShader_id, GL_FRAGMENT_SHADER);
@@ -58,8 +58,8 @@ void Shape::createShaders(){
 	glLinkProgram(program_id);
 	printStatus("link shader", program_id, GL_LINK_STATUS);
 
-//	glDeleteShader(fragmentShader_id);
-//	glDeleteShader(vertexShader_id);
+	glDeleteShader(fragmentShader_id);
+	glDeleteShader(vertexShader_id);
 	
 //	ErrorCheckValue = glGetError();
 //	if (ErrorCheckValue != GL_NO_ERROR){
@@ -293,6 +293,9 @@ Shape::Shape(int nVert, int components_per_vertex, string _type, string shader_n
 	glBindBuffer(GL_ARRAY_BUFFER, cbo); 	// Bring buffer into current openGL context
 	glBufferData(GL_ARRAY_BUFFER, 4*sizeof(float)*nVertices, NULL, GL_DYNAMIC_DRAW); 
 	
+	glGenBuffers(1, &ebo);
+	glGenBuffers(1, &tbo);
+	
 	glRenderer->addShape(this);
 	
 	b_render = ren;
@@ -304,14 +307,29 @@ Shape::~Shape(){
 	deleteShaders();
 	
 //	cout << "destroy " << objName << endl;
+	if (textured){
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glDeleteTextures(1, &tex);
+	}
+	
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	glDeleteBuffers(1, &ebo);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDeleteBuffers(1, &vbo);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glDeleteBuffers(1, &cbo);
+
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glDeleteBuffers(1, &tbo);
+	
 }
 
 void Shape::setVertices(void* data){
 
 	glBindBuffer(GL_ARRAY_BUFFER, vbo); 	// Bring 1st buffer into current openGL context
-	glBufferData(GL_ARRAY_BUFFER, dim*sizeof(float)*nVertices, data, GL_DYNAMIC_DRAW); 
+	glBufferSubData(GL_ARRAY_BUFFER, 0, dim*sizeof(float)*nVertices, data); 
 	// remove buffers from curent context. (appropriate buffers will be set bu CUDA resources)
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	
@@ -320,7 +338,7 @@ void Shape::setVertices(void* data){
 
 void Shape::setColors(float *colData){
 	glBindBuffer(GL_ARRAY_BUFFER, cbo);
-	glBufferData(GL_ARRAY_BUFFER, 4*sizeof(float)*nVertices, colData, GL_DYNAMIC_DRAW); 
+	glBufferSubData(GL_ARRAY_BUFFER, 0, 4*sizeof(float)*nVertices, colData); 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 }
 
@@ -331,6 +349,7 @@ void Shape::setElements(int * elements, int n){
 	glGenBuffers(1, &ebo);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, ebo); 	// Bring buffer into current openGL context
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(int)*n, elements, GL_DYNAMIC_DRAW); 
+	//   ^ Not using glBufferSubData here, assuming elements will be set only once.
 }
 
 void Shape::applyTexture(float* uvs, unsigned char* pixels, int width, int height){
@@ -339,6 +358,7 @@ void Shape::applyTexture(float* uvs, unsigned char* pixels, int width, int heigh
 	glGenBuffers(1, &tbo);
 	glBindBuffer(GL_ARRAY_BUFFER, tbo);
 	glBufferData(GL_ARRAY_BUFFER, nVertices*2*sizeof(float), uvs, GL_DYNAMIC_DRAW);
+	//   ^ Not using glBufferSubData here, assuming UVs will be set only once.
 
 	glGenTextures(1, &tex);
 	glActiveTexture(GL_TEXTURE0);
