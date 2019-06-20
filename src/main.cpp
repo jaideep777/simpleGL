@@ -75,7 +75,7 @@ int main(int argc, char ** argv){
 //	f.setElements(tess_ids, 6);
 //	f.applyTexture(UVs, image, 3,2);
 
-	Frame f1(0, 0, 50, 50, image);
+	Frame f1(0, 0, 50, 50, image, 3,2);
 //	f1.setExtent(-100,100,-100,100);
 	f1.setLayer(100);
 	

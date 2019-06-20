@@ -106,7 +106,7 @@ class Frame : public Shape{
 	float x0, y0, x1, y1;
 	int layer;
 	public:
-	Frame(float _x0, float _y0, float _x1, float _y1, unsigned char* image);
+	Frame(float _x0, float _y0, float _x1, float _y1, unsigned char* image, int width, int height);
 	void setLayer(int l);
 	void setExtent(float xmin, float xmax, float ymin, float ymax);
 };

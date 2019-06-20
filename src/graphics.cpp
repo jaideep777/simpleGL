@@ -503,23 +503,29 @@ void Shape2D::setExtent(float xmin, float xmax, float ymin, float ymax){
 }
 
 
-Frame::Frame(float _x0, float _y0, float _x1, float _y1, unsigned char* image)
+Frame::Frame(float _x0, float _y0, float _x1, float _y1, unsigned char* image, int width, int height)
 	: Shape(4,3,"triangles", "tex"){
 
-//	model = glm::ortho(0.f, 100.f, 0.f, 100.f, -10.f, 100.f);
 	x0 = _x0; y0 = _y0; x1 = _x1; y1 = _y1;
 	layer = 0;
 	
+	model = glm::mat4(1.f);
+	model = glm::translate(model, glm::vec3(x0, y0, 0.f));
+	model = glm::scale(model, glm::vec3(x1-x0, y1-y0, 1.f));
+
+//	glm::vec4 a = model*glm::vec4(1.f,1.f,0.f,1.f);
+//	cout << "Frame Vec:" << a.x << " " << a.y << " " << a.z << " " << a.w << endl;
+	
 	float verts[] = {
-		_x1, _y1, 0,
-		_x0, _y1, 0,
-		_x0, _y0, 0,
-		_x1, _y0, 0
-	};
+		1, 1, 0,
+		0, 1, 0,
+		0, 0, 0,
+		1, 0, 0
+	};	
 	
 	int tess_ids[] = {0,1,2,2,3,0};
 
-//	float UVs[] = {
+//	float UVs[] = {	// unmirrored UVs
 //	   1.0f, 1.0f,
 //	   0.0f, 1.0f,
 //	   0.0f, 0.0f,
@@ -533,24 +539,32 @@ Frame::Frame(float _x0, float _y0, float _x1, float _y1, unsigned char* image)
 	};
 	setVertices(verts);	
 	setElements(tess_ids, 6);
-	applyTexture(UVs, image, 3,2);
+	applyTexture(UVs, image, width, height);
 
 }
 
 void Frame::setExtent(float xmin, float xmax, float ymin, float ymax){
 	model = glm::ortho(xmin, xmax, ymin, ymax, 0.f, 100.f);
-
 }
 
+//void Frame::setPosition(float x0, float y0){
+//	model = glm::translate(model, ...);
+//}
+
 void Frame::setLayer(int l){
+//	float verts[] = {
+//		x1, y1, 0.1f*l,
+//		x0, y1, 0.1f*l,
+//		x0, y0, 0.1f*l,
+//		x1, y0, 0.1f*l
+//	};
+//	setVertices(verts);	
+	model = glm::translate(model, glm::vec3(0.f, 0.f, 0.1f*(l-layer)));
 	layer = l;
-	float verts[] = {
-		x1, y1, 0.1f*l,
-		x0, y1, 0.1f*l,
-		x0, y0, 0.1f*l,
-		x1, y0, 0.1f*l
-	};
-	setVertices(verts);	
+
+//	glm::vec4 a = model*glm::vec4(1.f,1.f,0.f,1.f);
+//	cout << "Frame Vec:" << a.x << " " << a.y << " " << a.z << " " << a.w << endl;
+
 }
 
 
